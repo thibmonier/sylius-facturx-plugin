@@ -1,0 +1,7 @@
+{% import '@SyliusAdmin/shared/helper/header.html.twig' as header %}
+
+{% set customer = hookable_metadata.context.resource %}
+
+<div class="col-12 col-md-6">
+    {{ header.h1('tmonier_facturx.ui.b2b_identifiers'|trans, 'tabler:building', customer.fullName|default(customer.email)) }}
+</div>

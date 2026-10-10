@@ -1,0 +1,21 @@
+tmonier_facturx_admin_channel_settings:
+    path: /channels/{id}/factur-x
+    methods: [GET, POST]
+    requirements:
+        id: '\d+'
+    defaults:
+        _controller: tmonier_facturx.controller.admin::channelSettingsAction
+
+tmonier_facturx_admin_customer_identifiers:
+    path: /customers/{id}/factur-x
+    methods: [GET, POST]
+    requirements:
+        id: '\d+'
+    defaults:
+        _controller: tmonier_facturx.controller.admin::customerIdentifiersAction
+
+tmonier_facturx_admin_invoice_download_xml:
+    path: /invoices/{id}/factur-x.xml
+    methods: [GET]
+    defaults:
+        _controller: tmonier_facturx.controller.admin::downloadXmlAction

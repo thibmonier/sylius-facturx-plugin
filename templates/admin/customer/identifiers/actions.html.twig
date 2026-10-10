@@ -1,0 +1,10 @@
+<div class="col-12 col-md-6 d-flex justify-content-md-end align-items-center gap-2">
+    <a class="btn" href="{{ path('sylius_admin_customer_show', {'id': hookable_metadata.context.resource.id}) }}">
+        {{ ux_icon('tabler:arrow-back-up', {'class': 'icon'}) }}
+        {{ 'sylius.ui.back'|trans }}
+    </a>
+    <button type="submit" form="tmonier-facturx-customer-identifiers" class="btn btn-primary" {{ sylius_test_html_attribute('save-facturx-identifiers') }}>
+        {{ ux_icon('tabler:device-floppy', {'class': 'icon'}) }}
+        {{ 'sylius.ui.save_changes'|trans }}
+    </button>
+</div>

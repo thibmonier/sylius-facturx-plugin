@@ -1,0 +1,13 @@
+{% set form = hookable_metadata.context.form %}
+
+<div class="g-col-12 g-col-xl-6 card">
+    <div class="card-header">
+        <div class="card-title">{{ 'tmonier_facturx.ui.section.payment'|trans }}</div>
+    </div>
+    <div class="card-body">
+        {{ form_row(form.paymentTerms) }}
+        {{ form_row(form.paymentDueDays) }}
+        {{ form_row(form.iban) }}
+        {{ form_row(form.bic) }}
+    </div>
+</div>

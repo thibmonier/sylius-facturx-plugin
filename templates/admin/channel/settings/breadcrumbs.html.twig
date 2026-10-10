@@ -1,0 +1,10 @@
+{% from '@SyliusAdmin/shared/helper/breadcrumbs.html.twig' import breadcrumbs %}
+
+{% set channel = hookable_metadata.context.resource %}
+
+{{ breadcrumbs([
+    { name: 'sylius.ui.dashboard', url: path('sylius_admin_dashboard'), active: false },
+    { name: 'sylius.ui.channels', url: path('sylius_admin_channel_index'), active: false },
+    { name: channel.name, url: path('sylius_admin_channel_update', {'id': channel.id}), active: false },
+    { name: 'tmonier_facturx.ui.factur_x', active: true },
+]) }}

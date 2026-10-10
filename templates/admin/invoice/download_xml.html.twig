@@ -1,0 +1,12 @@
+{% if hookable_metadata.context.invoice is defined %}
+    {% set invoice = hookable_metadata.context.invoice %}
+{% else %}
+    {% set invoice = hookable_metadata.context.resource|default(null) %}
+{% endif %}
+
+{% if tmonier_facturx_enabled_for_invoice(invoice) %}
+    <a href="{{ path('tmonier_facturx_admin_invoice_download_xml', {'id': invoice.id}) }}" class="btn" {{ sylius_test_html_attribute('download-facturx-xml') }}>
+        {{ ux_icon('tabler:file-code', {'class': 'icon'}) }}
+        {{ 'tmonier_facturx.ui.download_xml'|trans }}
+    </a>
+{% endif %}

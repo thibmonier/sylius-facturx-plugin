@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping">
+
+    <mapped-superclass name="Tmonier\SyliusFacturXPlugin\Entity\ChannelSettings" table="tmonier_facturx_channel_settings">
+        <id name="id" column="id" type="integer">
+            <generator strategy="AUTO" />
+        </id>
+
+        <field name="enabled" column="enabled" type="boolean" />
+        <field name="legalName" column="legal_name" type="string" length="255" nullable="true" />
+        <field name="siren" column="siren" type="string" length="9" nullable="true" />
+        <field name="siret" column="siret" type="string" length="14" nullable="true" />
+        <field name="vatNumber" column="vat_number" type="string" length="32" nullable="true" />
+        <field name="legalForm" column="legal_form" type="string" length="255" nullable="true" />
+        <field name="tradeRegister" column="trade_register" type="string" length="255" nullable="true" />
+        <field name="electronicAddress" column="electronic_address" type="string" length="255" nullable="true" />
+        <field name="electronicAddressScheme" column="electronic_address_scheme" type="string" length="8" nullable="true" />
+        <field name="paymentTerms" column="payment_terms" type="text" nullable="true" />
+        <field name="paymentDueDays" column="payment_due_days" type="integer" />
+        <field name="iban" column="iban" type="string" length="34" nullable="true" />
+        <field name="bic" column="bic" type="string" length="11" nullable="true" />
+        <field name="operationCategory" column="operation_category" type="string" length="16" />
+        <field name="vatOnDebits" column="vat_on_debits" type="boolean" />
+        <field name="zeroVatCategory" column="zero_vat_category" type="string" length="2" />
+        <field name="vatExemptionReason" column="vat_exemption_reason" type="string" length="255" nullable="true" />
+        <field name="vatExemptionReasonCode" column="vat_exemption_reason_code" type="string" length="32" nullable="true" />
+        <field name="latePaymentPenaltiesNote" column="late_payment_penalties_note" type="text" nullable="true" />
+        <field name="recoveryIndemnityNote" column="recovery_indemnity_note" type="text" nullable="true" />
+        <field name="earlyPaymentDiscountNote" column="early_payment_discount_note" type="text" nullable="true" />
+
+        <one-to-one field="channel" target-entity="Sylius\Component\Core\Model\ChannelInterface">
+            <join-column name="channel_id" referenced-column-name="id" nullable="false" unique="true" on-delete="CASCADE" />
+        </one-to-one>
+    </mapped-superclass>
+
+</doctrine-mapping>

@@ -1,0 +1,18 @@
+{% set form = hookable_metadata.context.form %}
+
+<div class="g-col-12 g-col-xl-6 card">
+    <div class="card-header">
+        <div class="card-title">{{ 'tmonier_facturx.ui.section.seller'|trans }}</div>
+    </div>
+    <div class="card-body">
+        {{ form_row(form.enabled) }}
+        {{ form_row(form.legalName) }}
+        {{ form_row(form.siren) }}
+        {{ form_row(form.siret) }}
+        {{ form_row(form.vatNumber) }}
+        {{ form_row(form.legalForm) }}
+        {{ form_row(form.tradeRegister) }}
+        {{ form_row(form.electronicAddress) }}
+        {{ form_row(form.electronicAddressScheme) }}
+    </div>
+</div>

@@ -1,0 +1,27 @@
+sylius_grid:
+    grids:
+        sylius_admin_channel:
+            actions:
+                item:
+                    tmonier_facturx:
+                        type: default
+                        label: tmonier_facturx.ui.factur_x
+                        icon: 'tabler:file-certificate'
+                        options:
+                            link:
+                                route: tmonier_facturx_admin_channel_settings
+                                parameters:
+                                    id: resource.id
+
+        sylius_invoicing_invoice:
+            actions:
+                item:
+                    tmonier_facturx_xml:
+                        type: default
+                        label: tmonier_facturx.ui.download_xml
+                        icon: 'tabler:file-code'
+                        options:
+                            link:
+                                route: tmonier_facturx_admin_invoice_download_xml
+                                parameters:
+                                    id: resource.id

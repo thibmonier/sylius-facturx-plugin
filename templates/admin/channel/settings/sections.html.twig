@@ -1,0 +1,17 @@
+{% set form = hookable_metadata.context.form %}
+
+{% form_theme form '@SyliusAdmin/shared/form_theme.html.twig' %}
+
+<div class="page-body">
+    <div class="container-xl">
+        {{ form_start(form, {'attr': {'id': 'tmonier-facturx-channel-settings', 'novalidate': 'novalidate'}}) }}
+        {{ form_errors(form) }}
+        <div class="alert alert-info" {{ sylius_test_html_attribute('facturx-settings-help') }}>
+            {{ 'tmonier_facturx.ui.channel_settings_help'|trans }}
+        </div>
+        <div class="grid">
+            {% hook 'sections' with { form } %}
+        </div>
+        {{ form_end(form, {render_rest: true}) }}
+    </div>
+</div>

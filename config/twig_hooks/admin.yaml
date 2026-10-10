@@ -1,0 +1,116 @@
+sylius_twig_hooks:
+    hooks:
+        # Invoice page and invoices of the order page: download of the factur-x.xml.
+        'sylius_admin.invoice.show.content.header.title_block.actions':
+            tmonier_facturx_download_xml:
+                template: '@TmonierSyliusFacturXPlugin/admin/invoice/download_xml.html.twig'
+                priority: 50
+
+        'sylius_admin.order.show.content.sections.invoices.table.body.actions':
+            tmonier_facturx_download_xml:
+                template: '@TmonierSyliusFacturXPlugin/admin/invoice/download_xml.html.twig'
+                priority: 50
+
+        # Channel edit page: link to the Factur-X settings of the channel.
+        'sylius_admin.channel.update.content.header.title_block.actions':
+            tmonier_facturx_settings:
+                template: '@TmonierSyliusFacturXPlugin/admin/channel/update/facturx_button.html.twig'
+                priority: 50
+
+        # Customer page: B2B identifiers card.
+        'sylius_admin.customer.show.content.sections':
+            tmonier_facturx_identifiers:
+                template: '@TmonierSyliusFacturXPlugin/admin/customer/show/identifiers_card.html.twig'
+                priority: -50
+
+        # Factur-X settings page of a channel.
+        'tmonier_facturx.admin.channel.settings':
+            sidebar:
+                template: '@SyliusAdmin/shared/crud/common/sidebar.html.twig'
+                priority: 200
+            navbar:
+                template: '@SyliusAdmin/shared/crud/common/navbar.html.twig'
+                priority: 100
+            content:
+                template: '@SyliusAdmin/shared/crud/common/content.html.twig'
+                priority: 0
+
+        'tmonier_facturx.admin.channel.settings.content':
+            flashes:
+                template: '@SyliusAdmin/shared/crud/common/content/flashes.html.twig'
+                priority: 200
+            header:
+                template: '@SyliusAdmin/shared/crud/common/content/header.html.twig'
+                priority: 100
+            sections:
+                template: '@TmonierSyliusFacturXPlugin/admin/channel/settings/sections.html.twig'
+                priority: 0
+
+        'tmonier_facturx.admin.channel.settings.content.header':
+            breadcrumbs:
+                template: '@TmonierSyliusFacturXPlugin/admin/channel/settings/breadcrumbs.html.twig'
+                priority: 100
+            title_block:
+                template: '@SyliusAdmin/shared/crud/common/content/header/title_block.html.twig'
+                priority: 0
+
+        'tmonier_facturx.admin.channel.settings.content.header.title_block':
+            title:
+                template: '@TmonierSyliusFacturXPlugin/admin/channel/settings/title.html.twig'
+                priority: 100
+            actions:
+                template: '@TmonierSyliusFacturXPlugin/admin/channel/settings/actions.html.twig'
+                priority: 0
+
+        'tmonier_facturx.admin.channel.settings.content.sections':
+            seller:
+                template: '@TmonierSyliusFacturXPlugin/admin/channel/settings/section_seller.html.twig'
+                priority: 400
+            vat:
+                template: '@TmonierSyliusFacturXPlugin/admin/channel/settings/section_vat.html.twig'
+                priority: 300
+            payment:
+                template: '@TmonierSyliusFacturXPlugin/admin/channel/settings/section_payment.html.twig'
+                priority: 200
+            notes:
+                template: '@TmonierSyliusFacturXPlugin/admin/channel/settings/section_notes.html.twig'
+                priority: 100
+
+        # B2B identifiers page of a customer.
+        'tmonier_facturx.admin.customer.identifiers':
+            sidebar:
+                template: '@SyliusAdmin/shared/crud/common/sidebar.html.twig'
+                priority: 200
+            navbar:
+                template: '@SyliusAdmin/shared/crud/common/navbar.html.twig'
+                priority: 100
+            content:
+                template: '@SyliusAdmin/shared/crud/common/content.html.twig'
+                priority: 0
+
+        'tmonier_facturx.admin.customer.identifiers.content':
+            flashes:
+                template: '@SyliusAdmin/shared/crud/common/content/flashes.html.twig'
+                priority: 200
+            header:
+                template: '@SyliusAdmin/shared/crud/common/content/header.html.twig'
+                priority: 100
+            sections:
+                template: '@TmonierSyliusFacturXPlugin/admin/customer/identifiers/sections.html.twig'
+                priority: 0
+
+        'tmonier_facturx.admin.customer.identifiers.content.header':
+            breadcrumbs:
+                template: '@TmonierSyliusFacturXPlugin/admin/customer/identifiers/breadcrumbs.html.twig'
+                priority: 100
+            title_block:
+                template: '@SyliusAdmin/shared/crud/common/content/header/title_block.html.twig'
+                priority: 0
+
+        'tmonier_facturx.admin.customer.identifiers.content.header.title_block':
+            title:
+                template: '@TmonierSyliusFacturXPlugin/admin/customer/identifiers/title.html.twig'
+                priority: 100
+            actions:
+                template: '@TmonierSyliusFacturXPlugin/admin/customer/identifiers/actions.html.twig'
+                priority: 0

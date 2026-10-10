@@ -1,0 +1,5 @@
+sylius_invoicing:
+    resource: "@SyliusInvoicingPlugin/config/routes.yaml"
+
+tmonier_sylius_facturx:
+    resource: "@TmonierSyliusFacturXPlugin/config/routes.yaml"

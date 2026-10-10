@@ -1,0 +1,36 @@
+{% set customer = hookable_metadata.context.resource %}
+{% set identifiers = tmonier_facturx_customer_identifiers(customer) %}
+
+<div class="card mb-3" {{ sylius_test_html_attribute('facturx-customer-identifiers') }}>
+    <div class="card-header">
+        <div class="card-title">
+            {{ ux_icon('tabler:building', {'class': 'icon'}) }}
+            {{ 'tmonier_facturx.ui.b2b_identifiers'|trans }}
+        </div>
+        <div class="card-actions">
+            <a class="btn btn-sm" href="{{ path('tmonier_facturx_admin_customer_identifiers', {'id': customer.id}) }}" {{ sylius_test_html_attribute('edit-facturx-identifiers') }}>
+                {{ ux_icon('tabler:pencil', {'class': 'icon'}) }}
+                {{ 'sylius.ui.edit'|trans }}
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if identifiers is null %}
+            <p class="text-secondary mb-0">{{ 'tmonier_facturx.ui.no_b2b_identifiers'|trans }}</p>
+        {% else %}
+            <div class="divide-y">
+                {% for label, value in {
+                    'tmonier_facturx.form.customer.company_name': identifiers.companyName,
+                    'tmonier_facturx.form.siren': identifiers.siren,
+                    'tmonier_facturx.form.vat_number': identifiers.vatNumber,
+                    'tmonier_facturx.form.electronic_address': identifiers.electronicAddress is not null ? (identifiers.electronicAddressScheme is not null ? identifiers.electronicAddressScheme ~ ': ' : '') ~ identifiers.electronicAddress : null,
+                } %}
+                    <div class="row">
+                        <div class="col-12 col-md-4 fw-bold">{{ label|trans }}</div>
+                        <div class="col-12 col-md-8">{{ value ?? '-' }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+</div>

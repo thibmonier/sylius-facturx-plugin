@@ -1,0 +1,14 @@
+{% set form = hookable_metadata.context.form %}
+
+<div class="g-col-12 g-col-xl-6 card">
+    <div class="card-header">
+        <div class="card-title">{{ 'tmonier_facturx.ui.section.vat'|trans }}</div>
+    </div>
+    <div class="card-body">
+        {{ form_row(form.operationCategory) }}
+        {{ form_row(form.vatOnDebits) }}
+        {{ form_row(form.zeroVatCategory) }}
+        {{ form_row(form.vatExemptionReason) }}
+        {{ form_row(form.vatExemptionReasonCode) }}
+    </div>
+</div>

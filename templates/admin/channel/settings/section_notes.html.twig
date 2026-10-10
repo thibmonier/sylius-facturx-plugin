@@ -1,0 +1,12 @@
+{% set form = hookable_metadata.context.form %}
+
+<div class="g-col-12 g-col-xl-6 card">
+    <div class="card-header">
+        <div class="card-title">{{ 'tmonier_facturx.ui.section.notes'|trans }}</div>
+    </div>
+    <div class="card-body">
+        {{ form_row(form.latePaymentPenaltiesNote) }}
+        {{ form_row(form.recoveryIndemnityNote) }}
+        {{ form_row(form.earlyPaymentDiscountNote) }}
+    </div>
+</div>

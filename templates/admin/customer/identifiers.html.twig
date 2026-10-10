@@ -1,0 +1,7 @@
+{% extends '@SyliusAdmin/shared/layout/base.html.twig' %}
+
+{% block title %}{{ 'tmonier_facturx.ui.b2b_identifiers'|trans }} - {{ customer.email }} | {{ parent() }}{% endblock %}
+
+{% block body %}
+    {% hook 'tmonier_facturx.admin.customer.identifiers' with { resource: customer, form } %}
+{% endblock %}

@@ -1,0 +1,7 @@
+{% extends '@SyliusAdmin/shared/layout/base.html.twig' %}
+
+{% block title %}{{ 'tmonier_facturx.ui.factur_x_settings'|trans }} - {{ channel.name }} | {{ parent() }}{% endblock %}
+
+{% block body %}
+    {% hook 'tmonier_facturx.admin.channel.settings' with { resource: channel, settings, form } %}
+{% endblock %}
