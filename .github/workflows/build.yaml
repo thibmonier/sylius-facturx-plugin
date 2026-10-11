@@ -102,3 +102,72 @@ jobs:
             -
                 name: Run Non-unit PHPUnit tests
                 run: vendor/bin/phpunit --colors=always --testsuite=non-unit
+
+    facturx-validation:
+        runs-on: ubuntu-latest
+
+        # Renders a real invoice with wkhtmltopdf, embeds the XML, and runs the Mustang validator
+        # (EN 16931 schematron + veraPDF PDF/A-3) on the files written by the functional tests.
+        # Not blocking yet: the PDF/A conformance depends on the PDF rendered by wkhtmltopdf.
+        name: "Factur-X validation (Mustang, veraPDF)"
+        continue-on-error: true
+
+        env:
+            APP_ENV: test
+            MUSTANG_VERSION: "2.26.0"
+            WKHTMLTOPDF_PATH: /usr/bin/wkhtmltopdf
+            QT_QPA_PLATFORM: offscreen
+
+        steps:
+            -
+                uses: actions/checkout@v4
+
+            -
+                name: Install wkhtmltopdf
+                run: sudo apt-get update && sudo apt-get install -y --no-install-recommends wkhtmltopdf
+
+            -
+                name: Build Sylius Test Application
+                uses: SyliusLabs/BuildTestAppAction@v4
+                with:
+                    e2e_js: "yes"
+                    cache_key: "${{ runner.os }}-php-8.4-composer-${{ hashFiles('**/composer.json') }}"
+                    cache_restore_key: "${{ runner.os }}-php-8.4-composer-"
+                    database: "mysql:8.4"
+                    node_version: "22.x"
+                    php_version: "8.4"
+                    sylius_version: "~2.3.0"
+                    symfony_version: "^7.4"
+
+            -
+                name: Generate a Factur-X PDF and XML
+                run: |
+                    vendor/bin/phpunit --colors=always --filter 'testTheAdminDownloadServesAFacturXPdf|testTheAdminDownloadsTheXmlOfAnInvoice' tests/Functional
+                    ls -l etc/build/factur-x.pdf etc/build/factur-x.xml
+
+            -
+                uses: actions/setup-java@v4
+                with:
+                    distribution: temurin
+                    java-version: "21"
+
+            -
+                name: Validate with Mustang
+                run: |
+                    curl -sSfL -o mustang.jar "https://repo1.maven.org/maven2/org/mustangproject/Mustang-CLI/${MUSTANG_VERSION}/Mustang-CLI-${MUSTANG_VERSION}.jar"
+                    status=0
+                    for file in etc/build/factur-x.xml etc/build/factur-x.pdf; do
+                        java -jar mustang.jar --no-notices --action validate --source "$file" > "$file.report.xml" || true
+                        cat "$file.report.xml"
+                        # The exit code is not reliable: read the summary of the report.
+                        grep -q '<summary status="valid"' "$file.report.xml" || status=1
+                    done
+                    exit $status
+
+            -
+                name: Upload the generated files and reports
+                if: always()
+                uses: actions/upload-artifact@v4
+                with:
+                    name: facturx-validation
+                    path: etc/build/factur-x*
