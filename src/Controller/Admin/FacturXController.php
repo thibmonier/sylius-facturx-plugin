@@ -129,7 +129,7 @@ final class FacturXController extends AbstractController
         try {
             $xml = $this->facturXGenerator->generateXml($invoice);
         } catch (FacturXException $exception) {
-            $this->addFlash('error', $exception->getMessage());
+            $this->addFlash('error', ['message' => 'tmonier_facturx.cannot_generate_xml', 'parameters' => ['%reason%' => $exception->getMessage()]]);
 
             return $this->redirectToRoute('sylius_invoicing_admin_invoice_show', ['id' => $id]);
         }

@@ -1,0 +1,7 @@
+tmonier_facturx:
+    siren:
+        invalid: "Ce SIREN n'est pas valide (9 chiffres avec une clé de contrôle valide)."
+    siret:
+        invalid: "Ce SIRET n'est pas valide (14 chiffres avec une clé de contrôle valide)."
+    vat_number:
+        invalid: "Ce numéro de TVA n'est pas valide."

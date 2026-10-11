@@ -1,0 +1,7 @@
+tmonier_facturx:
+    siren:
+        invalid: "Ten numer SIREN jest nieprawidłowy (9 cyfr z poprawną sumą kontrolną)."
+    siret:
+        invalid: "Ten numer SIRET jest nieprawidłowy (14 cyfr z poprawną sumą kontrolną)."
+    vat_number:
+        invalid: "Ten numer VAT jest nieprawidłowy."

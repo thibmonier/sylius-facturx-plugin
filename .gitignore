@@ -20,3 +20,4 @@
 /tests/TestApplication/.env.local
 /tests/TestApplication/.env.*.local
 /.env.local
+.DS_Store

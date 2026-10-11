@@ -1,0 +1,7 @@
+tmonier_facturx:
+    siren:
+        invalid: "Dit SIREN is ongeldig (9 cijfers met een geldig controlecijfer)."
+    siret:
+        invalid: "Dit SIRET is ongeldig (14 cijfers met een geldig controlecijfer)."
+    vat_number:
+        invalid: "Dit btw-nummer is ongeldig."

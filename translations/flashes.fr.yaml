@@ -1,0 +1,4 @@
+tmonier_facturx:
+    channel_settings_saved: "Les paramètres Factur-X ont été enregistrés."
+    customer_identifiers_saved: "Les identifiants B2B ont été enregistrés."
+    cannot_generate_xml: "Le XML Factur-X ne peut pas être généré : %reason%"

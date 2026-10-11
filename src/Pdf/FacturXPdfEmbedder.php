@@ -14,7 +14,7 @@ use horstoeko\zugferd\ZugferdDocumentPdfMerger;
 final class FacturXPdfEmbedder implements FacturXPdfEmbedderInterface
 {
     public function __construct(
-        private readonly string $attachmentRelationship = 'Data',
+        private readonly string $attachmentRelationship = 'Alternative',
         private readonly bool $deterministic = false,
     ) {
     }

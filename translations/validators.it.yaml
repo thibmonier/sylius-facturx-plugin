@@ -1,0 +1,7 @@
+tmonier_facturx:
+    siren:
+        invalid: "Questo SIREN non è valido (9 cifre con una cifra di controllo valida)."
+    siret:
+        invalid: "Questo SIRET non è valido (14 cifre con una cifra di controllo valida)."
+    vat_number:
+        invalid: "Questa partita IVA non è valida."

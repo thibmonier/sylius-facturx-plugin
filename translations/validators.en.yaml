@@ -1,0 +1,7 @@
+tmonier_facturx:
+    siren:
+        invalid: "This SIREN is not valid (9 digits with a valid checksum)."
+    siret:
+        invalid: "This SIRET is not valid (14 digits with a valid checksum)."
+    vat_number:
+        invalid: "This VAT number is not valid."

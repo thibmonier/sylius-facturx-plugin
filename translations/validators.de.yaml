@@ -1,0 +1,7 @@
+tmonier_facturx:
+    siren:
+        invalid: "Diese SIREN ist ungültig (9 Ziffern mit gültiger Prüfziffer)."
+    siret:
+        invalid: "Diese SIRET ist ungültig (14 Ziffern mit gültiger Prüfziffer)."
+    vat_number:
+        invalid: "Diese USt-IdNr. ist ungültig."

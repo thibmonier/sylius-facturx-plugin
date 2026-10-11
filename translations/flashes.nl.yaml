@@ -1,0 +1,4 @@
+tmonier_facturx:
+    channel_settings_saved: "De Factur-X-instellingen zijn opgeslagen."
+    customer_identifiers_saved: "De B2B-identificatoren zijn opgeslagen."
+    cannot_generate_xml: "De Factur-X-XML kan niet worden gegenereerd: %reason%"
