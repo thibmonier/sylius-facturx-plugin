@@ -95,7 +95,9 @@ trait FacturXAssertionsTrait
             'BR-CO-26',
         );
 
-        $emptyElements = self::xpath($xml)->query('//*[not(*) and not(@*) and normalize-space(.) = ""]');
+        // PEPPOL-EN16931-R008: no empty elements, except the delivery group, mandatory in CII,
+        // which has no content when the order is neither shipped nor delivered elsewhere.
+        $emptyElements = self::xpath($xml)->query('//*[not(*) and not(@*) and normalize-space(.) = "" and not(self::ram:ApplicableHeaderTradeDelivery)]');
         Assert::assertSame(0, false === $emptyElements ? -1 : $emptyElements->length, 'PEPPOL-EN16931-R008: no empty elements');
 
         foreach (self::xmlValues($xml, '//ram:LineTotalAmount|//ram:BasisAmount|//ram:CalculatedAmount|//ram:TaxBasisTotalAmount|//ram:TaxTotalAmount|//ram:GrandTotalAmount|//ram:TotalPrepaidAmount|//ram:DuePayableAmount') as $amount) {

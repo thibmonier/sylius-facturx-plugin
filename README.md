@@ -123,7 +123,7 @@ resource (`tmonier_sylius_facturx.resources.channel_settings.classes.model`, ...
 | Seller: legal name, SIREN, SIRET, VAT number, legal form + trade register, address | BT-27, BT-30 (scheme 0002), BT-29 (0009), BT-31, BT-33, BG-5 |
 | Buyer: billing company or name, address, B2B identifiers | BT-44, BG-8, BT-47, BT-48, BT-49 |
 | Shipping address, when different from the billing address | BG-15 |
-| Last shipping date of the order, or the issue date when nothing is shipped yet | BT-72 |
+| Last shipping date of the order (nothing while no shipment is shipped) | BT-72 |
 | Lines: product (or shipping method), variant code, quantity, gross and net unit price, net amount, VAT category and rate | BG-25 |
 | VAT breakdown per category and rate | BG-23 |
 | Totals, amount paid, amount due, due date | BG-22, BT-9 |
@@ -180,6 +180,8 @@ Grid actions are added to `sylius_admin_channel` (`tmonier_facturx`) and
 - Buyer identifiers are optional and entered by an administrator on the customer page; they
   are not captured at checkout. B2C invoices are valid Factur-X documents, but in France B2C
   sales are e-reported, not e-invoiced.
+- Invoices issued before shipping carry no delivery date (BT-72): the delivery group of the XML
+  is then empty, which validators report as the PEPPOL-EN16931-R008 warning (not an error).
 - Every line with a positive VAT rate is category S; all lines without VAT share the one
   category configured on the channel.
 - The PDF/A-3 conformance of the result depends on the PDF rendered by the Invoicing Plugin:

@@ -161,6 +161,7 @@ jobs:
                         java -jar mustang.jar --no-notices --action validate --source "$file" > "$file.report.xml" || true
                         cat "$file.report.xml"
                         # The exit code is not reliable: every summary of the report must be valid.
+                        # Warnings (e.g. PEPPOL-EN16931-R008 for unshipped orders) are accepted.
                         if ! grep -q '<summary status="valid"' "$file.report.xml" || grep -q '<summary status="invalid"' "$file.report.xml"; then
                             status=1
                         fi

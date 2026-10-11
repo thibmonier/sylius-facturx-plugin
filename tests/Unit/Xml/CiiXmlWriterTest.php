@@ -6,6 +6,7 @@ namespace Tests\Tmonier\SyliusFacturXPlugin\Unit\Xml;
 
 use PHPUnit\Framework\AssertionFailedError;
 use PHPUnit\Framework\TestCase;
+use Sylius\Component\Core\Model\Shipment;
 use Sylius\InvoicingPlugin\Entity\InvoiceInterface;
 use Tests\Tmonier\SyliusFacturXPlugin\FacturXAssertionsTrait;
 use Tests\Tmonier\SyliusFacturXPlugin\Unit\InvoiceBuilderTrait;
@@ -160,7 +161,31 @@ final class CiiXmlWriterTest extends TestCase
         self::assertSame('Jeanne Martin', self::xmlValue($xml, '//ram:ApplicableHeaderTradeDelivery/ram:ShipToTradeParty/ram:Name'));
         self::assertSame('Lyon', self::xmlValue($xml, '//ram:ApplicableHeaderTradeDelivery/ram:ShipToTradeParty/ram:PostalTradeAddress/ram:CityName'));
         self::assertSame('000000042', self::xmlValue($xml, '//ram:SellerOrderReferencedDocument/ram:IssuerAssignedID'));
-        self::assertSame('20261010', self::xmlValue($xml, '//ram:ApplicableHeaderTradeDelivery/ram:ActualDeliverySupplyChainEvent/ram:OccurrenceDateTime/udt:DateTimeString[@format="102"]'));
+        self::assertNull(self::xmlValue($xml, '//ram:ApplicableHeaderTradeDelivery/ram:ActualDeliverySupplyChainEvent'), 'No delivery date before shipping');
+    }
+
+    public function testItWritesTheDeliveryDateOfAShippedOrder(): void
+    {
+        $invoice = self::multiRateInvoice();
+        $shipment = new Shipment();
+        $shipment->setShippedAt(new \DateTime('2026-10-12 09:00'));
+        $invoice->order()->addShipment($shipment);
+
+        $xml = $this->write($invoice);
+
+        self::assertSame('20261012', self::xmlValue($xml, '//ram:ApplicableHeaderTradeDelivery/ram:ActualDeliverySupplyChainEvent/ram:OccurrenceDateTime/udt:DateTimeString[@format="102"]'));
+        self::assertValidAgainstXsd($xml);
+        self::assertEn16931BusinessRules($xml);
+    }
+
+    public function testTheDeliveryGroupStaysEmptyWhenThereIsNothingToDeliverTo(): void
+    {
+        $xml = $this->write(self::multiRateInvoice());
+
+        // Mandatory in CII: the only empty element allowed (PEPPOL-EN16931-R008 warning).
+        $nodes = self::xpath($xml)->query('//rsm:SupplyChainTradeTransaction/ram:ApplicableHeaderTradeDelivery[not(node())]');
+        self::assertInstanceOf(\DOMNodeList::class, $nodes);
+        self::assertSame(1, $nodes->length);
     }
 
     public function testTheRuleChecksDetectAnInconsistentTotal(): void

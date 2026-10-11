@@ -351,10 +351,13 @@ final class FacturXInvoiceMapperTest extends TestCase
         self::assertSame('FR', $address->countryCode);
     }
 
-    public function testTheDeliveryDateIsTheLastShippingDateOrTheIssueDate(): void
+    public function testTheDeliveryDateIsTheLastShippingDateAndNothingWhenNotShipped(): void
     {
         $invoice = self::multiRateInvoice();
-        self::assertEquals(new \DateTimeImmutable('2026-10-10 14:30:00'), $this->mapper->map($invoice, self::settings())->deliveryDate);
+        self::assertNull($this->mapper->map($invoice, self::settings())->deliveryDate);
+
+        $invoice->order()->addShipment(new Shipment());
+        self::assertNull($this->mapper->map($invoice, self::settings())->deliveryDate, 'Shipment not shipped yet');
 
         foreach (['2026-10-12 09:00', '2026-10-14 16:00'] as $date) {
             $shipment = new Shipment();
