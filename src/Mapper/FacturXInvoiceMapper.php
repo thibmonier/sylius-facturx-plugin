@@ -83,6 +83,7 @@ final class FacturXInvoiceMapper implements FacturXInvoiceMapperInterface
             salesOrderReference: $invoice->order()->getNumber(),
             deliveryName: $deliveryName,
             deliveryAddress: $deliveryAddress,
+            deliveryDate: $this->deliveryDate($invoice, $issueDate),
             notes: $this->mapNotes($settings),
             paymentInstructions: $this->mapPaymentInstructions($invoice, $settings),
             paymentTerms: $settings->getPaymentTerms(),
@@ -253,6 +254,24 @@ final class FacturXInvoiceMapper implements FacturXInvoiceMapperInterface
             city: self::nonEmpty($shippingAddress->getCity()),
             subdivision: self::nonEmpty($shippingAddress->getProvinceName()) ?? self::nonEmpty($shippingAddress->getProvinceCode()),
         )];
+    }
+
+    /**
+     * Actual delivery date (BT-72): the last shipping date of the order, or the issue date when
+     * nothing is shipped yet (e-commerce invoices are issued at the sale). Without it the
+     * delivery group of the XML would be empty (PEPPOL-EN16931-R008).
+     */
+    private function deliveryDate(InvoiceInterface $invoice, \DateTimeImmutable $issueDate): \DateTimeImmutable
+    {
+        $shippedAt = null;
+        foreach ($invoice->order()->getShipments() as $shipment) {
+            $date = $shipment->getShippedAt();
+            if (null !== $date && (null === $shippedAt || $date > $shippedAt)) {
+                $shippedAt = $date;
+            }
+        }
+
+        return null === $shippedAt ? $issueDate : \DateTimeImmutable::createFromInterface($shippedAt);
     }
 
     /** @return list<Note> */

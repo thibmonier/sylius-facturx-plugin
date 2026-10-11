@@ -14,6 +14,7 @@ use Tmonier\SyliusFacturXPlugin\Generator\FacturXInvoicePdfFileGenerator;
 use Tmonier\SyliusFacturXPlugin\Mapper\FacturXInvoiceMapper;
 use Tmonier\SyliusFacturXPlugin\Mapper\FacturXInvoiceMapperInterface;
 use Tmonier\SyliusFacturXPlugin\Pdf\FacturXPdfEmbedder;
+use Tmonier\SyliusFacturXPlugin\Pdf\Font\FontWidthsNormalizer;
 use Tmonier\SyliusFacturXPlugin\Pdf\FacturXPdfEmbedderInterface;
 use Tmonier\SyliusFacturXPlugin\Repository\ChannelSettingsRepositoryInterface;
 use Tmonier\SyliusFacturXPlugin\Repository\CustomerIdentifiersRepositoryInterface;
@@ -35,9 +36,17 @@ return static function (ContainerConfigurator $container): void {
     $services->set('tmonier_facturx.xml.writer', CiiXmlWriter::class);
     $services->alias(CiiXmlWriterInterface::class, 'tmonier_facturx.xml.writer');
 
+    $services->set('tmonier_facturx.pdf.font_widths_normalizer', FontWidthsNormalizer::class);
+
     $services
         ->set('tmonier_facturx.pdf.embedder', FacturXPdfEmbedder::class)
-        ->args([param('tmonier_facturx.attachment_relationship')])
+        ->args([
+            param('tmonier_facturx.attachment_relationship'),
+            false,
+            service('tmonier_facturx.pdf.font_widths_normalizer'),
+            service('logger'),
+        ])
+        ->tag('monolog.logger', ['channel' => 'tmonier_facturx'])
     ;
     $services->alias(FacturXPdfEmbedderInterface::class, 'tmonier_facturx.pdf.embedder');
 

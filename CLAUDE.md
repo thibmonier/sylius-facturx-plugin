@@ -23,7 +23,14 @@ Local env overrides (gitignored): `compose.override.yml` (MySQL published on 331
 8037/1037), `tests/TestApplication/.env.local` (DATABASE_URL + MAILER_DSN) and
 `.env.test.local` (DATABASE_URL). Databases: `tmonier_sylius_facturx_dev` / `_test`.
 Invoice PDFs are files: dev in `vendor/sylius/test-application/private/invoices/`, test in
-`private/invoices_test/` (see `tests/TestApplication/config/config.yaml`).
+`private/invoices_test/` (see `tests/TestApplication/config/config.yaml`). The kernel cache is
+`var/cache/<env>` at the plugin root.
+
+Without an executable `WKHTMLTOPDF_PATH`, dev and test render FPDF placeholder PDFs
+(`tests/TestApplication/config/fake_invoice_pdf.php`, decided at container compile time: clear
+`var/cache/*` after changing it). Real rendering without installing wkhtmltopdf:
+`WKHTMLTOPDF_PATH=$PWD/tests/TestApplication/bin/wkhtmltopdf-docker` (Docker image
+`surnet/alpine-wkhtmltopdf:3.20.3-0.12.6-full`); `RealInvoicePdfTest` runs only then.
 
 ## Architecture
 
@@ -37,21 +44,24 @@ Invoice PDFs are files: dev in `vendor/sylius/test-application/private/invoices/
   (syntax-free, amounts in cents). Checks that the lines add up to the invoice total.
 - `src/Xml/CiiXmlWriter` — `FacturXInvoice` → CII XML with the horstoeko builder (XSD order).
 - `src/Pdf/FacturXPdfEmbedder` — horstoeko `ZugferdDocumentPdfMerger` (FPDI): PDF/A-3B, XMP,
-  AFRelationship (config, default `Alternative`).
+  AFRelationship (config, default `Alternative`). Runs `src/Pdf/Font/FontWidthsNormalizer`
+  first: wkhtmltopdf writes wrong glyph widths (PDF/A 6.2.11.5), corrected from the `hmtx` of
+  the embedded TrueType fonts (`TrueTypeMetrics`) and appended as an incremental update.
 - `src/Entity/ChannelSettings`, `CustomerIdentifiers` — plugin tables linked to the channel /
   customer (core entities untouched); XML mappings in `config/doctrine` (mapped superclasses).
 - `src/Controller/Admin/FacturXController` — settings pages and XML download.
 - `src/Command/RegenerateInvoicePdfsCommand` — renders stored PDFs again (file managers do not
   overwrite: remove first).
-- `tests/TestApplication/src/Pdf/FakeInvoicePdfFileGenerator` — FPDF invoice when wkhtmltopdf
-  is not installed (decorates the inner generator, priority 10).
+- `tests/TestApplication/src/Pdf/FakeInvoicePdfFileGenerator` — FPDF placeholder invoice when
+  wkhtmltopdf is not available (decorates the inner generator, priority 10).
 
 ## Rules
 
 - Amounts stay integers (cents) until the XML writer; never compute VAT again from rates: the
   invoice amounts (Sylius per-unit rounding) are the truth, the XML must match the PDF.
 - Every generated XML in tests goes through `FacturXAssertionsTrait::assertValidAgainstXsd()`
-  and `assertEn16931BusinessRules()`; PDFs through `assertFacturXPdf()`.
+  and `assertEn16931BusinessRules()` (incl. no empty element, PEPPOL-EN16931-R008); PDFs
+  through `assertFacturXPdf()` (incl. glyph widths).
 - Keep `SPEC.md` sources and **UNVERIFIED** marks up to date when a rule changes.
 - Hook context values may be missing when null: use `hookable_metadata.context.x|default(null)`.
 - Model class parameters `%tmonier_facturx.model.*.class%` are set in `prepend()` because

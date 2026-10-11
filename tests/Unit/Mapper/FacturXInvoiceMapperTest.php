@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Tmonier\SyliusFacturXPlugin\Unit\Mapper;
 
 use PHPUnit\Framework\TestCase;
+use Sylius\Component\Core\Model\Shipment;
 use Sylius\InvoicingPlugin\Entity\BillingData;
 use Sylius\InvoicingPlugin\Entity\InvoiceInterface;
 use Tests\Tmonier\SyliusFacturXPlugin\Unit\InvoiceBuilderTrait;
@@ -348,6 +349,21 @@ final class FacturXInvoiceMapperTest extends TestCase
         self::assertSame('69002', $address->postcode);
         self::assertSame('Lyon', $address->city);
         self::assertSame('FR', $address->countryCode);
+    }
+
+    public function testTheDeliveryDateIsTheLastShippingDateOrTheIssueDate(): void
+    {
+        $invoice = self::multiRateInvoice();
+        self::assertEquals(new \DateTimeImmutable('2026-10-10 14:30:00'), $this->mapper->map($invoice, self::settings())->deliveryDate);
+
+        foreach (['2026-10-12 09:00', '2026-10-14 16:00'] as $date) {
+            $shipment = new Shipment();
+            $shipment->setShippedAt(new \DateTime($date));
+            $invoice->order()->addShipment($shipment);
+        }
+        $invoice->order()->addShipment(new Shipment());
+
+        self::assertEquals(new \DateTimeImmutable('2026-10-14 16:00'), $this->mapper->map($invoice, self::settings())->deliveryDate);
     }
 
     public function testItMapsTheFrenchPaymentNotesAndTheBankAccount(): void

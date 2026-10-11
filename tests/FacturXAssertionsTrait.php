@@ -6,6 +6,7 @@ namespace Tests\Tmonier\SyliusFacturXPlugin;
 
 use horstoeko\zugferd\ZugferdDocumentPdfReader;
 use PHPUnit\Framework\Assert;
+use Tmonier\SyliusFacturXPlugin\Pdf\Font\FontWidthsNormalizer;
 
 /**
  * Checks of a generated Factur-X document without Java tooling: XSD of the Factur-X EN 16931
@@ -94,6 +95,9 @@ trait FacturXAssertionsTrait
             'BR-CO-26',
         );
 
+        $emptyElements = self::xpath($xml)->query('//*[not(*) and not(@*) and normalize-space(.) = ""]');
+        Assert::assertSame(0, false === $emptyElements ? -1 : $emptyElements->length, 'PEPPOL-EN16931-R008: no empty elements');
+
         foreach (self::xmlValues($xml, '//ram:LineTotalAmount|//ram:BasisAmount|//ram:CalculatedAmount|//ram:TaxBasisTotalAmount|//ram:TaxTotalAmount|//ram:GrandTotalAmount|//ram:TotalPrepaidAmount|//ram:DuePayableAmount') as $amount) {
             Assert::assertMatchesRegularExpression('/^-?\d+(\.\d{1,2})?$/', $amount, 'BR-DEC: at most 2 decimals');
         }
@@ -179,6 +183,8 @@ trait FacturXAssertionsTrait
         Assert::assertSame('EN 16931', self::xmpValue($xmp, '//fx:ConformanceLevel'), 'fx:ConformanceLevel');
         Assert::assertSame('1.0', self::xmpValue($xmp, '//fx:Version'), 'fx:Version');
         Assert::assertContains('urn:factur-x:pdfa:CrossIndustryDocument:invoice:1p0#', self::xmpValues($xmp, '//pdfaSchema:namespaceURI'), 'PDF/A extension schema of Factur-X');
+
+        Assert::assertSame($pdf, (new FontWidthsNormalizer())->normalize($pdf), 'PDF/A 6.2.11.5: the glyph widths match the embedded font programs');
 
         $xml = ZugferdDocumentPdfReader::getXmlFromContent($pdf);
         Assert::assertStringContainsString('urn:cen.eu:en16931:2017', $xml);

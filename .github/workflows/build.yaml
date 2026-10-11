@@ -106,25 +106,25 @@ jobs:
     facturx-validation:
         runs-on: ubuntu-latest
 
-        # Renders a real invoice with wkhtmltopdf, embeds the XML, and runs the Mustang validator
-        # (EN 16931 schematron + veraPDF PDF/A-3) on the files written by the functional tests.
-        # Not blocking yet: the PDF/A conformance depends on the PDF rendered by wkhtmltopdf.
+        # Renders a real invoice with wkhtmltopdf (patched Qt, in Docker), embeds the XML, and runs
+        # the Mustang validator (EN 16931 schematron + veraPDF PDF/A-3) on the files written by
+        # the functional tests. Not blocking until it has run green on GitHub.
         name: "Factur-X validation (Mustang, veraPDF)"
         continue-on-error: true
 
         env:
             APP_ENV: test
             MUSTANG_VERSION: "2.26.0"
-            WKHTMLTOPDF_PATH: /usr/bin/wkhtmltopdf
-            QT_QPA_PLATFORM: offscreen
 
         steps:
             -
                 uses: actions/checkout@v4
 
             -
-                name: Install wkhtmltopdf
-                run: sudo apt-get update && sudo apt-get install -y --no-install-recommends wkhtmltopdf
+                name: Pull wkhtmltopdf
+                run: |
+                    docker pull --platform linux/amd64 surnet/alpine-wkhtmltopdf:3.20.3-0.12.6-full
+                    echo "WKHTMLTOPDF_PATH=$GITHUB_WORKSPACE/tests/TestApplication/bin/wkhtmltopdf-docker" >> "$GITHUB_ENV"
 
             -
                 name: Build Sylius Test Application
@@ -140,10 +140,11 @@ jobs:
                     symfony_version: "^7.4"
 
             -
-                name: Generate a Factur-X PDF and XML
+                name: Generate Factur-X PDFs and XML
                 run: |
-                    vendor/bin/phpunit --colors=always --filter 'testTheAdminDownloadServesAFacturXPdf|testTheAdminDownloadsTheXmlOfAnInvoice' tests/Functional
-                    ls -l etc/build/factur-x.pdf etc/build/factur-x.xml
+                    vendor/bin/console cache:clear
+                    vendor/bin/phpunit --colors=always --fail-on-skipped --filter 'testTheAdminDownloadServesAFacturXPdf|testTheAdminDownloadsTheXmlOfAnInvoice|RealInvoicePdfTest' tests/Functional
+                    ls -l etc/build/
 
             -
                 uses: actions/setup-java@v4
@@ -156,11 +157,13 @@ jobs:
                 run: |
                     curl -sSfL -o mustang.jar "https://repo1.maven.org/maven2/org/mustangproject/Mustang-CLI/${MUSTANG_VERSION}/Mustang-CLI-${MUSTANG_VERSION}.jar"
                     status=0
-                    for file in etc/build/factur-x.xml etc/build/factur-x.pdf; do
+                    for file in etc/build/factur-x.xml etc/build/factur-x.pdf etc/build/factur-x-wkhtmltopdf.pdf; do
                         java -jar mustang.jar --no-notices --action validate --source "$file" > "$file.report.xml" || true
                         cat "$file.report.xml"
-                        # The exit code is not reliable: read the summary of the report.
-                        grep -q '<summary status="valid"' "$file.report.xml" || status=1
+                        # The exit code is not reliable: every summary of the report must be valid.
+                        if ! grep -q '<summary status="valid"' "$file.report.xml" || grep -q '<summary status="invalid"' "$file.report.xml"; then
+                            status=1
+                        fi
                     done
                     exit $status
 

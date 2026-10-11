@@ -1,7 +1,7 @@
 imports:
     - { resource: "@SyliusInvoicingPlugin/config/config.yaml" }
     - { resource: "@TmonierSyliusFacturXPlugin/config/config.yaml" }
-    - { resource: "services_test.php" }
+    - { resource: "fake_invoice_pdf.php" }
 
 twig:
     paths:

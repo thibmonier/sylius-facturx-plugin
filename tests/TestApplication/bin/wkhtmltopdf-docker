@@ -1,0 +1,14 @@
+#!/bin/sh
+# wkhtmltopdf 0.12.6 with patched Qt, run in Docker: point WKHTMLTOPDF_PATH to this script to
+# render the real invoice PDFs in the test application without installing wkhtmltopdf.
+# KnpSnappy passes absolute paths of temporary files: the usual temporary directories, the
+# current directory and the home directory are mounted at the same paths.
+set -e
+mounts=""
+for dir in /tmp /private/tmp /var/folders /private/var/folders "$PWD" "$HOME"; do
+    if [ -d "$dir" ]; then
+        mounts="$mounts -v $dir:$dir"
+    fi
+done
+# shellcheck disable=SC2086
+exec docker run --rm -i --platform linux/amd64 $mounts -w "$PWD" "${WKHTMLTOPDF_IMAGE:-surnet/alpine-wkhtmltopdf:3.20.3-0.12.6-full}" "$@"

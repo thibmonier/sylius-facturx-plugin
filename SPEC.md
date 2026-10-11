@@ -98,7 +98,19 @@ Local check of `horstoeko/zugferd` (`assets/facturx_extension_schema.xmp`, `PdfB
 - `zugferd-invoice.xml` was the ZUGFeRD 2.0 file name, deprecated in 2.1
   ([Mustang](https://www.mustangproject.org/zugferd/)).
 - The source PDF must already be PDF/A-clean (embedded fonts, no transparency issues): the
-  merge does not fix the content of the pages.
+  merge does not fix the content of the pages, with one exception below.
+- **Glyph widths (ISO 19005-3, 6.2.11.5)**: the widths declared by the font dictionaries must
+  match the advance widths of the embedded font programs. wkhtmltopdf 0.12.6 (Qt) writes the
+  widths of the hinted font, about 0.7 % too small (276 instead of 277.83 for the space of
+  Arial, 2048 units per em), on every embedded TrueType subset: veraPDF reported 94 failures on
+  the default invoice template (local check with Mustang 2.26.0, 2026-10-11). FPDI copies the
+  dictionaries as they are. The plugin's `FontWidthsNormalizer` reads the source PDF with the
+  FPDI parser, recomputes `/W` (CIDFontType2, CIDToGIDMap Identity or stream) and `/Widths`
+  (simple TrueType, (3,0), (1,0) or ASCII (3,1) cmap) from the `hmtx` table of each FontFile2,
+  and appends the corrected dictionaries as an incremental update before the merge (own MIT
+  code, no new dependency). Fonts with more than 20,000 glyphs, Type1/CFF/Type3 fonts and fonts
+  defined directly in a resources dictionary are left as they are. After the fix, Mustang
+  reports the default invoice valid (PDF/A-3B, EN 16931, no warning).
 
 **AFRelationship** of the attached XML: the Factur-X specification (§ 6.2.2, read through a
 secondary source) uses `Data` when the PDF carries more information than the XML, `Source` when
@@ -261,6 +273,7 @@ promotions included). Order promotions are already distributed on the units. The
 | BT-49 | Buyer electronic address | customer setting + scheme |
 | BG-8 | Buyer address | billing data of the invoice (province name or code as subdivision) |
 | BT-70, BG-15 | Deliver-to name and address | order shipping address, only when it differs from the billing address |
+| BT-72 | Actual delivery date | last `shippedAt` of the order shipments, else the issue date (an empty delivery group triggers the PEPPOL-EN16931-R008 warning; the French mention "date of the supply" is only required when it differs from the invoice date) |
 | BT-81 | Payment means | `58` SEPA credit transfer, when an IBAN is set |
 | BT-83 | Remittance information | invoice number |
 | BT-84 / BT-86 | IBAN / BIC | channel settings |

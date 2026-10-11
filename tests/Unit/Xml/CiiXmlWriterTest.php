@@ -160,6 +160,7 @@ final class CiiXmlWriterTest extends TestCase
         self::assertSame('Jeanne Martin', self::xmlValue($xml, '//ram:ApplicableHeaderTradeDelivery/ram:ShipToTradeParty/ram:Name'));
         self::assertSame('Lyon', self::xmlValue($xml, '//ram:ApplicableHeaderTradeDelivery/ram:ShipToTradeParty/ram:PostalTradeAddress/ram:CityName'));
         self::assertSame('000000042', self::xmlValue($xml, '//ram:SellerOrderReferencedDocument/ram:IssuerAssignedID'));
+        self::assertSame('20261010', self::xmlValue($xml, '//ram:ApplicableHeaderTradeDelivery/ram:ActualDeliverySupplyChainEvent/ram:OccurrenceDateTime/udt:DateTimeString[@format="102"]'));
     }
 
     public function testTheRuleChecksDetectAnInconsistentTotal(): void

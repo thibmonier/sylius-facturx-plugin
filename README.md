@@ -123,6 +123,7 @@ resource (`tmonier_sylius_facturx.resources.channel_settings.classes.model`, ...
 | Seller: legal name, SIREN, SIRET, VAT number, legal form + trade register, address | BT-27, BT-30 (scheme 0002), BT-29 (0009), BT-31, BT-33, BG-5 |
 | Buyer: billing company or name, address, B2B identifiers | BT-44, BG-8, BT-47, BT-48, BT-49 |
 | Shipping address, when different from the billing address | BG-15 |
+| Last shipping date of the order, or the issue date when nothing is shipped yet | BT-72 |
 | Lines: product (or shipping method), variant code, quantity, gross and net unit price, net amount, VAT category and rate | BG-25 |
 | VAT breakdown per category and rate | BG-23 |
 | Totals, amount paid, amount due, due date | BG-22, BT-9 |
@@ -181,9 +182,12 @@ Grid actions are added to `sylius_admin_channel` (`tmonier_facturx`) and
   sales are e-reported, not e-invoiced.
 - Every line with a positive VAT rate is category S; all lines without VAT share the one
   category configured on the channel.
-- The PDF/A-3 conformance of the result depends on the PDF rendered by the Invoicing Plugin
-  (embedded fonts, colours): the plugin adds the attachment, the XMP metadata and the output
-  intent, it does not rewrite the pages. Check a sample with a validator (see *Development*).
+- The PDF/A-3 conformance of the result depends on the PDF rendered by the Invoicing Plugin:
+  the plugin adds the attachment, the XMP metadata and the output intent, and corrects the
+  glyph widths of the embedded TrueType fonts (wkhtmltopdf writes them about 0.7 % too small,
+  which veraPDF rejects), but it does not rewrite the pages. With the default template and
+  wkhtmltopdf 0.12.6 the result passes veraPDF (PDF/A-3B); check a sample of your own template
+  with a validator (see *Development*).
 - Already stored PDFs are not changed until you run `tmonier:facturx:regenerate-pdfs`.
 - If the Factur-X document cannot be built (missing seller data, unreadable PDF), the plain PDF
   is kept and the error is logged on the `tmonier_facturx` channel.
@@ -209,10 +213,22 @@ vendor/bin/phpstan analyse
 vendor/bin/ecs check
 ```
 
-Without wkhtmltopdf, the test application renders invoices as a one-page FPDF document so that
-the Factur-X pipeline can run anywhere. The tests validate every generated XML against the
+**Placeholder PDFs**: when `WKHTMLTOPDF_PATH` does not point to an executable wkhtmltopdf, the
+test application (dev and test environments) renders every invoice as a one-page FPDF
+placeholder (*Invoice 2026/10/000001*), which still becomes a valid Factur-X PDF. To see the
+real invoices without installing wkhtmltopdf, use the Docker wrapper (wkhtmltopdf 0.12.6 with
+patched Qt), then clear the cache and render the stored PDFs again:
+
+```bash
+echo "WKHTMLTOPDF_PATH=$PWD/tests/TestApplication/bin/wkhtmltopdf-docker" >> tests/TestApplication/.env.local
+rm -rf var/cache/dev var/cache/test
+vendor/bin/console tmonier:facturx:regenerate-pdfs
+```
+
+The tests validate every generated XML against the
 Factur-X EN 16931 XSD and re-compute the EN 16931 calculation rules in PHP. The functional tests
-write `etc/build/factur-x.pdf` and `etc/build/factur-x.xml`; the CI validates them with
+write `etc/build/factur-x.pdf` and `etc/build/factur-x.xml` (and, with a real wkhtmltopdf,
+`etc/build/factur-x-wkhtmltopdf.pdf`); the CI renders a real invoice and validates them with
 [Mustang](https://www.mustangproject.org/commandline/) (EN 16931 schematron and veraPDF):
 
 ```bash
