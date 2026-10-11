@@ -28,9 +28,9 @@ final class AdminChannelSettingsTest extends WebTestCase
     public function testTheChannelPagesLinkToTheFacturXSettings(): void
     {
         $channel = $this->findChannel();
-        $url = sprintf('/admin/channels/%d/factur-x', (int) $channel->getId());
+        $url = sprintf('/admin/channels/%d/factur-x', $this->idOf($channel));
 
-        $this->client->request('GET', sprintf('/admin/channels/%d/edit', (int) $channel->getId()));
+        $this->client->request('GET', sprintf('/admin/channels/%d/edit', $this->idOf($channel)));
         self::assertResponseIsSuccessful();
         self::assertSelectorExists(sprintf('[data-test-facturx-settings-link][href="%s"]', $url));
 
@@ -43,7 +43,7 @@ final class AdminChannelSettingsTest extends WebTestCase
     {
         $channel = $this->findChannel();
 
-        $crawler = $this->client->request('GET', sprintf('/admin/channels/%d/factur-x', (int) $channel->getId()));
+        $crawler = $this->client->request('GET', sprintf('/admin/channels/%d/factur-x', $this->idOf($channel)));
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('[data-test-facturx-settings-help]');
 
@@ -65,7 +65,7 @@ final class AdminChannelSettingsTest extends WebTestCase
         ]);
         $this->client->submit($form);
 
-        self::assertResponseRedirects(sprintf('/admin/channels/%d/factur-x', (int) $channel->getId()));
+        self::assertResponseRedirects(sprintf('/admin/channels/%d/factur-x', $this->idOf($channel)));
         $this->client->followRedirect();
         self::assertSelectorTextContains('[data-test-sylius-flash-message-type="success"]', 'The Factur-X settings have been saved.');
 
@@ -88,7 +88,7 @@ final class AdminChannelSettingsTest extends WebTestCase
     {
         $channel = $this->findChannel();
 
-        $crawler = $this->client->request('GET', sprintf('/admin/channels/%d/factur-x', (int) $channel->getId()));
+        $crawler = $this->client->request('GET', sprintf('/admin/channels/%d/factur-x', $this->idOf($channel)));
         $form = $crawler->filter('#tmonier-facturx-channel-settings')->form([
             'tmonier_facturx_channel_settings[siren]' => '732829321',
             'tmonier_facturx_channel_settings[siret]' => '73282932000018',
@@ -111,7 +111,7 @@ final class AdminChannelSettingsTest extends WebTestCase
     {
         $channel = $this->findChannel();
 
-        $this->client->request('GET', sprintf('/admin/channels/%d/factur-x?_locale=fr_FR', (int) $channel->getId()));
+        $this->client->request('GET', sprintf('/admin/channels/%d/factur-x?_locale=fr_FR', $this->idOf($channel)));
 
         self::assertResponseIsSuccessful();
     }

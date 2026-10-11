@@ -11,6 +11,7 @@ use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
 use Sylius\InvoicingPlugin\Entity\InvoiceInterface;
+use Sylius\Resource\Model\ResourceInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Tmonier\SyliusFacturXPlugin\Entity\ChannelSettings;
 use Tmonier\SyliusFacturXPlugin\Entity\ChannelSettingsInterface;
@@ -141,6 +142,14 @@ trait FacturXTestTrait
     private static function keepForValidation(string $filename, string $content): void
     {
         file_put_contents(__DIR__ . '/../../etc/build/' . $filename, $content);
+    }
+
+    private function idOf(ResourceInterface $resource): int
+    {
+        $id = $resource->getId();
+        self::assertIsInt($id);
+
+        return $id;
     }
 
     private function entityManager(): EntityManagerInterface

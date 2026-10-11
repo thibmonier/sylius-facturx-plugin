@@ -7,6 +7,7 @@ use Symplify\EasyCodingStandard\Config\ECSConfig;
 return static function (ECSConfig $ecsConfig): void {
     $ecsConfig->paths([
         __DIR__ . '/src',
+        __DIR__ . '/tests/FacturXAssertionsTrait.php',
         __DIR__ . '/tests/Functional',
         __DIR__ . '/tests/Unit',
         __DIR__ . '/tests/Integration',

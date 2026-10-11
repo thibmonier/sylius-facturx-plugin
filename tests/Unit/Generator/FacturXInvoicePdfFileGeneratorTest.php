@@ -93,16 +93,20 @@ final class FacturXInvoicePdfFileGeneratorTest extends TestCase
             $this->events[] = $event;
         });
 
-        $logs = &$this->logs;
-        $logger = new class($logs) extends AbstractLogger {
-            /** @param list<string> $logs */
-            public function __construct(private array &$logs)
+        $logger = new class(function (string $log): void {
+            $this->logs[] = $log;
+        }) extends AbstractLogger {
+            public function __construct(private readonly \Closure $record)
             {
             }
 
             public function log($level, \Stringable|string $message, array $context = []): void
             {
-                $this->logs[] = strtr((string) $message, ['{number}' => (string) ($context['number'] ?? ''), '{message}' => (string) ($context['message'] ?? '')]);
+                $replacements = [];
+                foreach (['number', 'message'] as $placeholder) {
+                    $replacements['{' . $placeholder . '}'] = is_string($context[$placeholder] ?? null) ? $context[$placeholder] : '';
+                }
+                ($this->record)(strtr((string) $message, $replacements));
             }
         };
 

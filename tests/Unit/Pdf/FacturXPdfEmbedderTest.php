@@ -52,7 +52,7 @@ final class FacturXPdfEmbedderTest extends TestCase
             $source->Cell(0, 10, sprintf('Page %d', $page));
         }
 
-        $pdf = (new FacturXPdfEmbedder())->embed($source->Output('S'), $this->xml());
+        $pdf = (new FacturXPdfEmbedder())->embed(self::render($source), $this->xml());
 
         self::assertSame(3, preg_match_all('#/Type\s*/Page\b#', $pdf));
     }
@@ -69,6 +69,14 @@ final class FacturXPdfEmbedderTest extends TestCase
         $pdf->SetFont('Helvetica', '', 14);
         $pdf->Cell(0, 10, 'Invoice 2026/10/000001');
 
-        return $pdf->Output('S');
+        return self::render($pdf);
+    }
+
+    private static function render(\FPDF $pdf): string
+    {
+        $content = $pdf->Output('S');
+        self::assertIsString($content);
+
+        return $content;
     }
 }

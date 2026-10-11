@@ -89,7 +89,7 @@ final class AdminInvoiceXmlTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertSelectorExists(sprintf('[data-test-download-facturx-xml][href="%s"]', $url));
 
-        $this->client->request('GET', sprintf('/admin/orders/%d', (int) $invoice->order()->getId()));
+        $this->client->request('GET', sprintf('/admin/orders/%d', $this->idOf($invoice->order())));
         self::assertResponseIsSuccessful();
         self::assertSelectorExists(sprintf('[data-test-download-facturx-xml][href="%s"]', $url));
 

@@ -236,10 +236,10 @@ final class FacturXInvoiceMapper implements FacturXInvoiceMapperInterface
         }
 
         $billingData = $invoice->billingData();
-        $sameAddress = self::normalize($shippingAddress->getStreet()) === self::normalize($billingData->street())
-            && self::normalize($shippingAddress->getPostcode()) === self::normalize($billingData->postcode())
-            && self::normalize($shippingAddress->getCity()) === self::normalize($billingData->city())
-            && $shippingAddress->getCountryCode() === $billingData->countryCode();
+        $sameAddress = self::normalize($shippingAddress->getStreet()) === self::normalize($billingData->street()) &&
+            self::normalize($shippingAddress->getPostcode()) === self::normalize($billingData->postcode()) &&
+            self::normalize($shippingAddress->getCity()) === self::normalize($billingData->city()) &&
+            $shippingAddress->getCountryCode() === $billingData->countryCode();
         if ($sameAddress) {
             return [null, null];
         }

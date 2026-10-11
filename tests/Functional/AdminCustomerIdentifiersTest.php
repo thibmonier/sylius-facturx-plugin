@@ -29,17 +29,17 @@ final class AdminCustomerIdentifiersTest extends WebTestCase
     {
         $customer = $this->findCustomer();
 
-        $this->client->request('GET', sprintf('/admin/customers/%d', (int) $customer->getId()));
+        $this->client->request('GET', sprintf('/admin/customers/%d', $this->idOf($customer)));
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('[data-test-facturx-customer-identifiers]', 'No B2B identifiers');
-        self::assertSelectorExists(sprintf('[data-test-edit-facturx-identifiers][href="/admin/customers/%d/factur-x"]', (int) $customer->getId()));
+        self::assertSelectorExists(sprintf('[data-test-edit-facturx-identifiers][href="/admin/customers/%d/factur-x"]', $this->idOf($customer)));
     }
 
     public function testTheAdminSavesAndRemovesTheIdentifiersOfACustomer(): void
     {
         $customer = $this->findCustomer();
-        $url = sprintf('/admin/customers/%d/factur-x', (int) $customer->getId());
+        $url = sprintf('/admin/customers/%d/factur-x', $this->idOf($customer));
 
         $crawler = $this->client->request('GET', $url);
         self::assertResponseIsSuccessful();
@@ -51,7 +51,7 @@ final class AdminCustomerIdentifiersTest extends WebTestCase
             'tmonier_facturx_customer_identifiers[electronicAddressScheme]' => '0225',
         ]));
 
-        self::assertResponseRedirects(sprintf('/admin/customers/%d', (int) $customer->getId()));
+        self::assertResponseRedirects(sprintf('/admin/customers/%d', $this->idOf($customer)));
         $this->client->followRedirect();
         self::assertSelectorTextContains('[data-test-facturx-customer-identifiers]', '552081317');
         self::assertSelectorTextContains('[data-test-facturx-customer-identifiers]', 'Martin Conseil SARL');
@@ -74,7 +74,7 @@ final class AdminCustomerIdentifiersTest extends WebTestCase
     {
         $customer = $this->findCustomer();
 
-        $crawler = $this->client->request('GET', sprintf('/admin/customers/%d/factur-x', (int) $customer->getId()));
+        $crawler = $this->client->request('GET', sprintf('/admin/customers/%d/factur-x', $this->idOf($customer)));
         $this->client->submit($crawler->filter('#tmonier-facturx-customer-identifiers')->form([
             'tmonier_facturx_customer_identifiers[siren]' => '552081318',
         ]));

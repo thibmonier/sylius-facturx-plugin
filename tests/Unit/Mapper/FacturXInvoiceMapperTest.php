@@ -342,10 +342,12 @@ final class FacturXInvoiceMapperTest extends TestCase
         $different = $this->mapper->map($invoice, self::settings());
 
         self::assertSame('Jeanne Martin', $different->deliveryName);
-        self::assertSame('3 place Bellecour', $different->deliveryAddress?->line1);
-        self::assertSame('69002', $different->deliveryAddress?->postcode);
-        self::assertSame('Lyon', $different->deliveryAddress?->city);
-        self::assertSame('FR', $different->deliveryAddress?->countryCode);
+        $address = $different->deliveryAddress;
+        self::assertNotNull($address);
+        self::assertSame('3 place Bellecour', $address->line1);
+        self::assertSame('69002', $address->postcode);
+        self::assertSame('Lyon', $address->city);
+        self::assertSame('FR', $address->countryCode);
     }
 
     public function testItMapsTheFrenchPaymentNotesAndTheBankAccount(): void

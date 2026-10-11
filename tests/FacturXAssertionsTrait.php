@@ -53,9 +53,7 @@ trait FacturXAssertionsTrait
             return null;
         }
 
-        $node = $nodes->item(0);
-
-        return null === $node ? null : trim((string) $node->textContent);
+        return self::text($nodes->item(0));
     }
 
     /** @return list<string> */
@@ -63,7 +61,7 @@ trait FacturXAssertionsTrait
     {
         $values = [];
         foreach (self::xpath($xml)->query($expression) ?: [] as $node) {
-            $values[] = trim((string) $node->textContent);
+            $values[] = (string) self::text($node);
         }
 
         return $values;
@@ -89,10 +87,10 @@ trait FacturXAssertionsTrait
         Assert::assertNotEmpty(self::xmlValue($xml, $agreement . '/ram:SellerTradeParty/ram:PostalTradeAddress/ram:CountryID'), 'BR-09');
         Assert::assertNotEmpty(self::xmlValue($xml, $agreement . '/ram:BuyerTradeParty/ram:PostalTradeAddress/ram:CountryID'), 'BR-11');
         Assert::assertTrue(
-            null !== self::xmlValue($xml, $agreement . '/ram:SellerTradeParty/ram:ID')
-            || null !== self::xmlValue($xml, $agreement . '/ram:SellerTradeParty/ram:GlobalID')
-            || null !== self::xmlValue($xml, $agreement . '/ram:SellerTradeParty/ram:SpecifiedLegalOrganization/ram:ID')
-            || null !== self::xmlValue($xml, $agreement . '/ram:SellerTradeParty/ram:SpecifiedTaxRegistration/ram:ID'),
+            null !== self::xmlValue($xml, $agreement . '/ram:SellerTradeParty/ram:ID') ||
+            null !== self::xmlValue($xml, $agreement . '/ram:SellerTradeParty/ram:GlobalID') ||
+            null !== self::xmlValue($xml, $agreement . '/ram:SellerTradeParty/ram:SpecifiedLegalOrganization/ram:ID') ||
+            null !== self::xmlValue($xml, $agreement . '/ram:SellerTradeParty/ram:SpecifiedTaxRegistration/ram:ID'),
             'BR-CO-26',
         );
 
@@ -123,20 +121,20 @@ trait FacturXAssertionsTrait
         $linesByGroup = [];
         foreach ($xpath->query('//ram:IncludedSupplyChainTradeLineItem') ?: [] as $line) {
             \assert($line instanceof \DOMNode);
-            $category = trim((string) $xpath->evaluate('string(ram:SpecifiedLineTradeSettlement/ram:ApplicableTradeTax/ram:CategoryCode)', $line));
-            $rate = trim((string) $xpath->evaluate('string(ram:SpecifiedLineTradeSettlement/ram:ApplicableTradeTax/ram:RateApplicablePercent)', $line));
+            $category = self::evaluate($xpath, 'string(ram:SpecifiedLineTradeSettlement/ram:ApplicableTradeTax/ram:CategoryCode)', $line);
+            $rate = self::evaluate($xpath, 'string(ram:SpecifiedLineTradeSettlement/ram:ApplicableTradeTax/ram:RateApplicablePercent)', $line);
             $key = $category . '|' . ('' === $rate ? '' : (string) (float) $rate);
-            $linesByGroup[$key] = ($linesByGroup[$key] ?? 0) + self::cents(trim((string) $xpath->evaluate('string(ram:SpecifiedLineTradeSettlement/ram:SpecifiedTradeSettlementLineMonetarySummation/ram:LineTotalAmount)', $line)));
+            $linesByGroup[$key] = ($linesByGroup[$key] ?? 0) + self::cents(self::evaluate($xpath, 'string(ram:SpecifiedLineTradeSettlement/ram:SpecifiedTradeSettlementLineMonetarySummation/ram:LineTotalAmount)', $line));
         }
 
         $breakdownTaxes = 0;
         $groups = [];
         foreach ($xpath->query($settlement . '/ram:ApplicableTradeTax') ?: [] as $tax) {
             \assert($tax instanceof \DOMNode);
-            $category = trim((string) $xpath->evaluate('string(ram:CategoryCode)', $tax));
-            $rate = trim((string) $xpath->evaluate('string(ram:RateApplicablePercent)', $tax));
-            $basis = self::cents(trim((string) $xpath->evaluate('string(ram:BasisAmount)', $tax)));
-            $calculated = self::cents(trim((string) $xpath->evaluate('string(ram:CalculatedAmount)', $tax)));
+            $category = self::evaluate($xpath, 'string(ram:CategoryCode)', $tax);
+            $rate = self::evaluate($xpath, 'string(ram:RateApplicablePercent)', $tax);
+            $basis = self::cents(self::evaluate($xpath, 'string(ram:BasisAmount)', $tax));
+            $calculated = self::cents(self::evaluate($xpath, 'string(ram:CalculatedAmount)', $tax));
             $key = $category . '|' . ('' === $rate ? '' : (string) (float) $rate);
 
             Assert::assertArrayNotHasKey($key, $groups, sprintf('One VAT breakdown per category and rate (%s)', $key));
@@ -147,11 +145,11 @@ trait FacturXAssertionsTrait
                 Assert::assertLessThanOrEqual(100, abs($expected - $calculated), sprintf('BR-CO-17: VAT amount of %s', $key));
             }
             if (in_array($category, ['S', 'Z'], true)) {
-                Assert::assertSame('', trim((string) $xpath->evaluate('string(ram:ExemptionReason)', $tax)), sprintf('BR-%s-10', $category));
+                Assert::assertSame('', self::evaluate($xpath, 'string(ram:ExemptionReason)', $tax), sprintf('BR-%s-10', $category));
             } else {
                 Assert::assertSame(0, $calculated, sprintf('BR-%s-09: no VAT for the category %s', $category, $category));
                 Assert::assertTrue(
-                    '' !== trim((string) $xpath->evaluate('string(ram:ExemptionReason)', $tax)) || '' !== trim((string) $xpath->evaluate('string(ram:ExemptionReasonCode)', $tax)),
+                    '' !== self::evaluate($xpath, 'string(ram:ExemptionReason)', $tax) || '' !== self::evaluate($xpath, 'string(ram:ExemptionReasonCode)', $tax),
                     sprintf('BR-%s-10: exemption reason of the category %s', $category, $category),
                 );
             }
@@ -183,7 +181,6 @@ trait FacturXAssertionsTrait
         Assert::assertContains('urn:factur-x:pdfa:CrossIndustryDocument:invoice:1p0#', self::xmpValues($xmp, '//pdfaSchema:namespaceURI'), 'PDF/A extension schema of Factur-X');
 
         $xml = ZugferdDocumentPdfReader::getXmlFromContent($pdf);
-        Assert::assertIsString($xml, 'factur-x.xml attachment');
         Assert::assertStringContainsString('urn:cen.eu:en16931:2017', $xml);
 
         return $xml;
@@ -194,7 +191,7 @@ trait FacturXAssertionsTrait
         Assert::assertSame(1, preg_match('#<x:xmpmeta.*?</x:xmpmeta>#s', $pdf, $matches), 'Uncompressed XMP metadata stream');
 
         $document = new \DOMDocument();
-        Assert::assertTrue($document->loadXML($matches[0]), 'Well-formed XMP');
+        Assert::assertTrue($document->loadXML($matches[0] ?? ''), 'Well-formed XMP');
         $xpath = new \DOMXPath($document);
         $xpath->registerNamespace('pdfaid', 'http://www.aiim.org/pdfa/ns/id/');
         $xpath->registerNamespace('fx', 'urn:factur-x:pdfa:CrossIndustryDocument:invoice:1p0#');
@@ -213,10 +210,23 @@ trait FacturXAssertionsTrait
     {
         $values = [];
         foreach ($xmp->query($expression) ?: [] as $node) {
-            $values[] = trim((string) $node->textContent);
+            $values[] = (string) self::text($node);
         }
 
         return $values;
+    }
+
+    private static function text(\DOMNode|\DOMNameSpaceNode|null $node): ?string
+    {
+        return $node instanceof \DOMNode ? trim($node->textContent) : null;
+    }
+
+    private static function evaluate(\DOMXPath $xpath, string $expression, \DOMNode $context): string
+    {
+        $value = $xpath->evaluate($expression, $context);
+        Assert::assertIsString($value);
+
+        return trim($value);
     }
 
     private static function cents(string $amount): int

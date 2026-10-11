@@ -35,7 +35,6 @@ final class FacturXController extends AbstractController
     /**
      * @param ChannelRepositoryInterface<ChannelInterface> $channelRepository
      * @param CustomerRepositoryInterface<CustomerInterface> $customerRepository
-     * @param InvoiceRepositoryInterface<InvoiceInterface> $invoiceRepository
      * @param FactoryInterface<ChannelSettingsInterface> $channelSettingsFactory
      * @param FactoryInterface<CustomerIdentifiersInterface> $customerIdentifiersFactory
      */

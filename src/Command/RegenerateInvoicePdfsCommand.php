@@ -32,7 +32,6 @@ final class RegenerateInvoicePdfsCommand extends Command
 {
     private const STORAGE_CONTEXT = 'sylius_invoicing';
 
-    /** @param InvoiceRepositoryInterface<InvoiceInterface> $invoiceRepository */
     public function __construct(
         private readonly InvoiceRepositoryInterface $invoiceRepository,
         private readonly InvoicePdfFileGeneratorInterface $invoicePdfFileGenerator,
