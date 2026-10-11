@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
+use Tmonier\SyliusFacturXPlugin\Command\RegenerateInvoicePdfsCommand;
 use Tmonier\SyliusFacturXPlugin\Controller\Admin\FacturXController;
 use Tmonier\SyliusFacturXPlugin\Form\Type\ChannelSettingsType;
 use Tmonier\SyliusFacturXPlugin\Form\Type\CustomerIdentifiersType;
@@ -65,6 +66,17 @@ return static function (ContainerConfigurator $container): void {
             service('logger'),
         ])
         ->tag('monolog.logger', ['channel' => 'tmonier_facturx'])
+    ;
+
+    $services
+        ->set('tmonier_facturx.command.regenerate_pdfs', RegenerateInvoicePdfsCommand::class)
+        ->args([
+            service('sylius_invoicing.repository.invoice'),
+            service('sylius_invoicing.generator.invoice_pdf_file'),
+            service('sylius_invoicing.manager.invoice_file'),
+            service('tmonier_facturx.generator'),
+        ])
+        ->tag('console.command')
     ;
 
     // Back office

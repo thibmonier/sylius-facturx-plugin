@@ -138,7 +138,6 @@ final class FacturXController extends AbstractController
         $response->headers->set('Content-Disposition', HeaderUtils::makeDisposition(
             HeaderUtils::DISPOSITION_ATTACHMENT,
             self::xmlFilename($invoice),
-            'factur-x.xml',
         ));
 
         return $response;

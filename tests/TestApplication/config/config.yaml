@@ -24,3 +24,8 @@ doctrine:
                         type: attribute
                         dir: '%kernel.project_dir%/../../../tests/TestApplication/src/Entity'
                         prefix: Tests\Tmonier\SyliusFacturXPlugin
+
+# The test invoices have the same numbers as the dev ones: keep their PDFs apart.
+when@test:
+    parameters:
+        sylius_invoicing.invoice_save_path: "%kernel.project_dir%/private/invoices_test/"
