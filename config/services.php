@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
 use Tmonier\SyliusFacturXPlugin\Command\RegenerateInvoicePdfsCommand;
+use Tmonier\SyliusFacturXPlugin\DependencyInjection\TmonierSyliusFacturXExtension;
 use Tmonier\SyliusFacturXPlugin\Controller\Admin\FacturXController;
 use Tmonier\SyliusFacturXPlugin\Form\Type\ChannelSettingsType;
 use Tmonier\SyliusFacturXPlugin\Form\Type\CustomerIdentifiersType;
@@ -13,6 +14,9 @@ use Tmonier\SyliusFacturXPlugin\Generator\FacturXGeneratorInterface;
 use Tmonier\SyliusFacturXPlugin\Generator\FacturXInvoicePdfFileGenerator;
 use Tmonier\SyliusFacturXPlugin\Mapper\FacturXInvoiceMapper;
 use Tmonier\SyliusFacturXPlugin\Mapper\FacturXInvoiceMapperInterface;
+use Tmonier\SyliusFacturXPlugin\PaymentTerms\ChannelSettingsPaymentTermsProvider;
+use Tmonier\SyliusFacturXPlugin\PaymentTerms\CompositeInvoicePaymentTermsProvider;
+use Tmonier\SyliusFacturXPlugin\PaymentTerms\InvoicePaymentTermsProviderInterface;
 use Tmonier\SyliusFacturXPlugin\Pdf\FacturXPdfEmbedder;
 use Tmonier\SyliusFacturXPlugin\Pdf\Font\FontWidthsNormalizer;
 use Tmonier\SyliusFacturXPlugin\Pdf\FacturXPdfEmbedderInterface;
@@ -30,7 +34,21 @@ return static function (ContainerConfigurator $container): void {
     $services->alias(CustomerIdentifiersRepositoryInterface::class, 'tmonier_facturx.repository.customer_identifiers');
 
     // Factur-X document
-    $services->set('tmonier_facturx.mapper.invoice', FacturXInvoiceMapper::class);
+    // Due date (BT-9) and payment terms (BT-20): tagged providers by priority, then the channel settings.
+    $services->set('tmonier_facturx.payment_terms_provider.channel_settings', ChannelSettingsPaymentTermsProvider::class);
+    $services
+        ->set('tmonier_facturx.payment_terms_provider', CompositeInvoicePaymentTermsProvider::class)
+        ->args([
+            tagged_iterator(TmonierSyliusFacturXExtension::TAG_INVOICE_PAYMENT_TERMS_PROVIDER),
+            service('tmonier_facturx.payment_terms_provider.channel_settings'),
+        ])
+    ;
+    $services->alias(InvoicePaymentTermsProviderInterface::class, 'tmonier_facturx.payment_terms_provider');
+
+    $services
+        ->set('tmonier_facturx.mapper.invoice', FacturXInvoiceMapper::class)
+        ->args([service('tmonier_facturx.payment_terms_provider')])
+    ;
     $services->alias(FacturXInvoiceMapperInterface::class, 'tmonier_facturx.mapper.invoice');
 
     $services->set('tmonier_facturx.xml.writer', CiiXmlWriter::class);

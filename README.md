@@ -126,12 +126,48 @@ resource (`tmonier_sylius_facturx.resources.channel_settings.classes.model`, ...
 | Last shipping date of the order (nothing while no shipment is shipped) | BT-72 |
 | Lines: product (or shipping method), variant code, quantity, gross and net unit price, net amount, VAT category and rate | BG-25 |
 | VAT breakdown per category and rate | BG-23 |
-| Totals, amount paid, amount due, due date | BG-22, BT-9 |
-| IBAN / BIC, payment terms, notes | BG-16, BT-20, BT-22 |
+| Totals, amount paid, amount due, due date (channel settings or a payment terms provider) | BG-22, BT-9 |
+| IBAN / BIC, payment terms (channel settings or a payment terms provider), notes | BG-16, BT-20, BT-22 |
 
 The amounts are the ones of the invoice: Sylius rounds the VAT per unit, so a VAT amount may
 differ by a few cents from *taxable amount × rate*, which EN 16931 allows. The full mapping,
 the French rules and the sources are in [SPEC.md](SPEC.md).
+
+## Extension point: per-order payment terms
+
+By default the due date (BT-9) is the issue date plus the channel's *payment due days* when an
+amount is due, and the payment terms (BT-20) are the channel's *payment terms* text. A plugin
+that knows better for some orders (e.g. trade credit: "45 days end of month", per-customer
+terms) provides them with an `InvoicePaymentTermsProviderInterface`:
+
+```php
+use Sylius\InvoicingPlugin\Entity\InvoiceInterface;
+use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
+use Tmonier\SyliusFacturXPlugin\Entity\ChannelSettingsInterface;
+use Tmonier\SyliusFacturXPlugin\PaymentTerms\InvoicePaymentTerms;
+use Tmonier\SyliusFacturXPlugin\PaymentTerms\InvoicePaymentTermsProviderInterface;
+
+#[AsTaggedItem(priority: 10)]
+final class TradeCreditPaymentTermsProvider implements InvoicePaymentTermsProviderInterface
+{
+    public function provide(InvoiceInterface $invoice, ChannelSettingsInterface $settings, int $duePayableAmount): ?InvoicePaymentTerms
+    {
+        $terms = $this->termsRepository->findOneByOrder($invoice->order());
+        if (null === $terms) {
+            return null; // next provider, then the channel settings
+        }
+
+        return new InvoicePaymentTerms($terms->getDueDate(), $terms->getLabel());
+    }
+}
+```
+
+Autoconfigured services get the `tmonier_facturx.invoice_payment_terms_provider` tag (set
+`priority` on the tag or with `#[AsTaggedItem]`, highest first). The first provider returning
+terms wins; the channel settings apply when none does. When an amount is due, terms with
+neither due date nor text are skipped, so the XML always satisfies BR-CO-25. Paid invoices
+(nothing due) get no default due date. The aggregate is available as
+`InvoicePaymentTermsProviderInterface` (`tmonier_facturx.payment_terms_provider`).
 
 ## Extension point: transmission to a platform
 

@@ -18,6 +18,9 @@ use Tmonier\SyliusFacturXPlugin\Model\Note;
 use Tmonier\SyliusFacturXPlugin\Model\Party;
 use Tmonier\SyliusFacturXPlugin\Model\PaymentInstructions;
 use Tmonier\SyliusFacturXPlugin\Model\VatBreakdown;
+use Tmonier\SyliusFacturXPlugin\PaymentTerms\ChannelSettingsPaymentTermsProvider;
+use Tmonier\SyliusFacturXPlugin\PaymentTerms\CompositeInvoicePaymentTermsProvider;
+use Tmonier\SyliusFacturXPlugin\PaymentTerms\InvoicePaymentTermsProviderInterface;
 
 /**
  * Maps an invoice of the Sylius Invoicing Plugin to the Factur-X EN 16931 data.
@@ -43,6 +46,14 @@ final class FacturXInvoiceMapper implements FacturXInvoiceMapperInterface
         'G' => 'Export outside the EU',
     ];
 
+    private readonly InvoicePaymentTermsProviderInterface $paymentTermsProvider;
+
+    /** Without provider, the channel settings give the due date and payment terms (behaviour of 1.0). */
+    public function __construct(?InvoicePaymentTermsProviderInterface $paymentTermsProvider = null)
+    {
+        $this->paymentTermsProvider = $paymentTermsProvider ?? new CompositeInvoicePaymentTermsProvider([]);
+    }
+
     public function map(
         InvoiceInterface $invoice,
         ChannelSettingsInterface $settings,
@@ -64,6 +75,8 @@ final class FacturXInvoiceMapper implements FacturXInvoiceMapperInterface
         $issueDate = \DateTimeImmutable::createFromInterface($invoice->issuedAt());
 
         [$deliveryName, $deliveryAddress] = $this->mapDelivery($invoice);
+        $paymentTerms = $this->paymentTermsProvider->provide($invoice, $settings, $duePayable)
+            ?? (new ChannelSettingsPaymentTermsProvider())->provide($invoice, $settings, $duePayable);
 
         return new FacturXInvoice(
             number: $invoice->number(),
@@ -86,8 +99,8 @@ final class FacturXInvoiceMapper implements FacturXInvoiceMapperInterface
             deliveryDate: $this->deliveryDate($invoice),
             notes: $this->mapNotes($settings),
             paymentInstructions: $this->mapPaymentInstructions($invoice, $settings),
-            paymentTerms: $settings->getPaymentTerms(),
-            dueDate: $duePayable > 0 ? $issueDate->modify(sprintf('+%d days', max(0, $settings->getPaymentDueDays()))) : null,
+            paymentTerms: $paymentTerms->description,
+            dueDate: $paymentTerms->dueDate,
             vatPointDateCode: $settings->isVatOnDebits() ? self::VAT_ON_DEBITS_DATE_CODE : null,
         );
     }

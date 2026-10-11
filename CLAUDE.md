@@ -42,6 +42,12 @@ Without an executable `WKHTMLTOPDF_PATH`, dev and test render FPDF placeholder P
   calls the mapper, the writer and the embedder. Enabled = global config + channel setting.
 - `src/Mapper/FacturXInvoiceMapper` — Invoicing Plugin `Invoice` → `src/Model/FacturXInvoice`
   (syntax-free, amounts in cents). Checks that the lines add up to the invoice total.
+- `src/PaymentTerms/` — BT-9 / BT-20: `CompositeInvoicePaymentTermsProvider`
+  (`tmonier_facturx.payment_terms_provider`, tagged `tmonier_facturx.invoice_payment_terms_provider`
+  providers by priority, then `ChannelSettingsPaymentTermsProvider`), injected in the mapper
+  (optional constructor argument: `new FacturXInvoiceMapper()` keeps the 1.0 behaviour). The
+  test application registers `TestPaymentTermsProvider` (priority 10, inert unless a test sets
+  terms for an order number).
 - `src/Xml/CiiXmlWriter` — `FacturXInvoice` → CII XML with the horstoeko builder (XSD order).
 - `src/Pdf/FacturXPdfEmbedder` — horstoeko `ZugferdDocumentPdfMerger` (FPDI): PDF/A-3B, XMP,
   AFRelationship (config, default `Alternative`). Runs `src/Pdf/Font/FontWidthsNormalizer`

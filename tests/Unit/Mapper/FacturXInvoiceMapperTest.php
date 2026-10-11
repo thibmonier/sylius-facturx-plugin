@@ -17,6 +17,9 @@ use Tmonier\SyliusFacturXPlugin\Model\InvoiceLine;
 use Tmonier\SyliusFacturXPlugin\Model\Note;
 use Tmonier\SyliusFacturXPlugin\Model\PaymentInstructions;
 use Tmonier\SyliusFacturXPlugin\Model\VatBreakdown;
+use Tmonier\SyliusFacturXPlugin\PaymentTerms\CompositeInvoicePaymentTermsProvider;
+use Tmonier\SyliusFacturXPlugin\PaymentTerms\InvoicePaymentTerms;
+use Tmonier\SyliusFacturXPlugin\PaymentTerms\InvoicePaymentTermsProviderInterface;
 
 final class FacturXInvoiceMapperTest extends TestCase
 {
@@ -220,6 +223,44 @@ final class FacturXInvoiceMapperTest extends TestCase
         self::assertSame('S1', $document->businessProcess);
         self::assertSame(0, $document->prepaidAmount);
         self::assertSame(4583, $document->duePayableAmount);
+        self::assertSame('2026-11-09', $document->dueDate?->format('Y-m-d'));
+        self::assertSame('Paiement à 30 jours', $document->paymentTerms);
+    }
+
+    public function testAPaymentTermsProviderGivesPerOrderTerms(): void
+    {
+        $provider = new class() implements InvoicePaymentTermsProviderInterface {
+            public ?int $duePayableAmount = null;
+
+            public function provide(InvoiceInterface $invoice, ChannelSettingsInterface $settings, int $duePayableAmount): ?InvoicePaymentTerms
+            {
+                $this->duePayableAmount = $duePayableAmount;
+
+                return '000000042' === $invoice->order()->getNumber()
+                    ? new InvoicePaymentTerms(new \DateTimeImmutable('2026-12-31'), 'Net 60 days end of month')
+                    : null;
+            }
+        };
+        $mapper = new FacturXInvoiceMapper(new CompositeInvoicePaymentTermsProvider([$provider]));
+
+        $document = $mapper->map(self::multiRateInvoice(InvoiceInterface::PAYMENT_STATE_PENDING), self::settings());
+
+        self::assertSame(4583, $provider->duePayableAmount);
+        self::assertSame('2026-12-31', $document->dueDate?->format('Y-m-d'));
+        self::assertSame('Net 60 days end of month', $document->paymentTerms);
+    }
+
+    public function testAProviderWithoutTermsFallsBackToTheChannelSettings(): void
+    {
+        $provider = new class() implements InvoicePaymentTermsProviderInterface {
+            public function provide(InvoiceInterface $invoice, ChannelSettingsInterface $settings, int $duePayableAmount): ?InvoicePaymentTerms
+            {
+                return null;
+            }
+        };
+
+        $document = (new FacturXInvoiceMapper($provider))->map(self::multiRateInvoice(InvoiceInterface::PAYMENT_STATE_PENDING), self::settings());
+
         self::assertSame('2026-11-09', $document->dueDate?->format('Y-m-d'));
         self::assertSame('Paiement à 30 jours', $document->paymentTerms);
     }

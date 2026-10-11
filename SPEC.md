@@ -242,6 +242,12 @@ promotions included). Order promotions are already distributed on the units. The
   its total.
 - Paid invoice (Invoicing Plugin payment state `completed`): BT-113 = BT-112, BT-115 = 0, no due
   date. Otherwise BT-9 = issue date + the configured number of days.
+- Since 1.1, BT-9 and BT-20 come from `InvoicePaymentTermsProviderInterface` services (tag
+  `tmonier_facturx.invoice_payment_terms_provider`, by priority), the channel settings being the
+  fallback (`ChannelSettingsPaymentTermsProvider`, the 1.0 behaviour). Needed by the trade
+  credit plugin (per-order terms, e.g. 45 days end of month, French L441-10 mentions). When an
+  amount is due, provider terms without due date nor text are skipped so that BR-CO-25 ("if
+  BT-115 > 0, BT-9 or BT-20 shall be present") always holds.
 - Lines without tax (no rate, or 0 % with no tax) get the channel's zero-VAT category
   (E, Z, O, AE, K or G); every line with a positive rate is category S. Default exemption
   reasons are written for E, O, AE, K, G when none is configured.
@@ -255,9 +261,9 @@ promotions included). Order promotions are already distributed on the units. The
 | BT-3 | Type code | `380` (commercial invoice) |
 | BT-5 | Currency | `Invoice::currencyCode()` |
 | BT-8 | VAT point date code | `5` when *VAT on debits* is set |
-| BT-9 | Due date | issue date + *payment due in (days)*, unpaid invoices only |
+| BT-9 | Due date | payment terms provider, else issue date + *payment due in (days)*, unpaid invoices only |
 | BT-14 | Sales order reference | order number |
-| BT-20 | Payment terms | channel setting |
+| BT-20 | Payment terms | payment terms provider, else channel setting |
 | BT-21 / BT-22 | Notes | `PMD`, `PMT`, `AAB` channel settings |
 | BT-23 | Business process | `B`/`S`/`M` + `1` (to pay) or `2` (paid) |
 | BT-24 | Specification identifier | `urn:cen.eu:en16931:2017` |

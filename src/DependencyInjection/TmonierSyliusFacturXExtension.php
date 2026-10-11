@@ -10,10 +10,13 @@ use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\PrependExtensionInterface;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
+use Tmonier\SyliusFacturXPlugin\PaymentTerms\InvoicePaymentTermsProviderInterface;
 
 final class TmonierSyliusFacturXExtension extends AbstractResourceExtension implements PrependExtensionInterface
 {
     use PrependDoctrineMigrationsTrait;
+
+    public const TAG_INVOICE_PAYMENT_TERMS_PROVIDER = 'tmonier_facturx.invoice_payment_terms_provider';
 
     public function getAlias(): string
     {
@@ -30,6 +33,8 @@ final class TmonierSyliusFacturXExtension extends AbstractResourceExtension impl
         $container->setParameter('tmonier_facturx.enabled', $config['enabled']);
         $container->setParameter('tmonier_facturx.profile', $config['profile']);
         $container->setParameter('tmonier_facturx.attachment_relationship', $config['attachment_relationship']);
+
+        $container->registerForAutoconfiguration(InvoicePaymentTermsProviderInterface::class)->addTag(self::TAG_INVOICE_PAYMENT_TERMS_PROVIDER);
 
         $loader = new PhpFileLoader($container, new FileLocator(__DIR__ . '/../../config'));
         $loader->load('services.php');
