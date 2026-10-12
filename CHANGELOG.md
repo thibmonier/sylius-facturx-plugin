@@ -12,7 +12,9 @@
   an amount is due, channel payment terms text), used when no provider handles an invoice.
 - `CompositeInvoicePaymentTermsProvider` (`tmonier_facturx.payment_terms_provider`, alias
   `InvoicePaymentTermsProviderInterface`). When an amount is due, provider terms with neither
-  due date nor text are skipped (BR-CO-25).
+  due date nor text are skipped (BR-CO-25); when nothing is due (paid invoice), the due date
+  is dropped. A provider passed to `FacturXInvoiceMapper` directly is wrapped in the composite,
+  so the same rules apply.
 
 ### Changed
 

@@ -9,7 +9,8 @@ use Tmonier\SyliusFacturXPlugin\Entity\ChannelSettingsInterface;
 
 /**
  * Asks the tagged providers by priority and falls back to the channel settings, so that an
- * invoice with an amount due always gets a due date or payment terms (BR-CO-25).
+ * invoice with an amount due always gets a due date or payment terms (BR-CO-25). Invoices with
+ * nothing due never get a due date.
  */
 final class CompositeInvoicePaymentTermsProvider implements InvoicePaymentTermsProviderInterface
 {
@@ -25,10 +26,16 @@ final class CompositeInvoicePaymentTermsProvider implements InvoicePaymentTermsP
         foreach ($this->providers as $provider) {
             $terms = $provider->provide($invoice, $settings, $duePayableAmount);
             if (null !== $terms && ($duePayableAmount <= 0 || !$terms->isEmpty())) {
-                return $terms;
+                return $this->withoutDueDateWhenNothingIsDue($terms, $duePayableAmount);
             }
         }
 
-        return $this->fallback->provide($invoice, $settings, $duePayableAmount) ?? new InvoicePaymentTerms();
+        return $this->withoutDueDateWhenNothingIsDue($this->fallback->provide($invoice, $settings, $duePayableAmount) ?? new InvoicePaymentTerms(), $duePayableAmount);
+    }
+
+    /** BT-9 is only written for invoices with an amount due (paid invoices keep the terms text). */
+    private function withoutDueDateWhenNothingIsDue(InvoicePaymentTerms $terms, int $duePayableAmount): InvoicePaymentTerms
+    {
+        return $duePayableAmount <= 0 && null !== $terms->dueDate ? new InvoicePaymentTerms(null, $terms->description) : $terms;
     }
 }

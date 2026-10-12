@@ -50,7 +50,9 @@ final class InvoicePaymentTermsTest extends WebTestCase
 
         self::assertValidAgainstXsd($xml);
         self::assertEn16931BusinessRules($xml);
-        self::assertSame('20270131', self::xmlValue($xml, self::TERMS . '/ram:DueDateDateTime/udt:DateTimeString'));
+        // BT-9 only when an amount is due (the random fixtures pay some invoices).
+        $paid = InvoiceInterface::PAYMENT_STATE_COMPLETED === $invoice->paymentState();
+        self::assertSame($paid ? null : '20270131', self::xmlValue($xml, self::TERMS . '/ram:DueDateDateTime/udt:DateTimeString'));
         self::assertStringStartsWith('Payment on account: 45 days end of month.', (string) self::xmlValue($xml, self::TERMS . '/ram:Description'));
     }
 

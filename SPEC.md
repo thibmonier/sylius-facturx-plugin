@@ -247,7 +247,9 @@ promotions included). Order promotions are already distributed on the units. The
   fallback (`ChannelSettingsPaymentTermsProvider`, the 1.0 behaviour). Needed by the trade
   credit plugin (per-order terms, e.g. 45 days end of month, French L441-10 mentions). When an
   amount is due, provider terms without due date nor text are skipped so that BR-CO-25 ("if
-  BT-115 > 0, BT-9 or BT-20 shall be present") always holds.
+  BT-115 > 0, BT-9 or BT-20 shall be present") always holds. Any provider passed to the mapper
+  is wrapped in the composite. BT-9 is never written when nothing is due (paid invoice), even
+  when a provider returns a due date; BT-20 is kept.
 - Lines without tax (no rate, or 0 % with no tax) get the channel's zero-VAT category
   (E, Z, O, AE, K or G); every line with a positive rate is category S. Default exemption
   reasons are written for E, O, AE, K, G when none is configured.

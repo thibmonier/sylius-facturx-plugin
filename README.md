@@ -154,6 +154,7 @@ final class TradeCreditPaymentTermsProvider implements InvoicePaymentTermsProvid
     {
         $terms = $this->termsRepository->findOneByOrder($invoice->order());
         if (null === $terms) {
+            // $duePayableAmount (cents) is 0 for a paid invoice: the due date is then dropped.
             return null; // next provider, then the channel settings
         }
 
@@ -166,7 +167,7 @@ Autoconfigured services get the `tmonier_facturx.invoice_payment_terms_provider`
 `priority` on the tag or with `#[AsTaggedItem]`, highest first). The first provider returning
 terms wins; the channel settings apply when none does. When an amount is due, terms with
 neither due date nor text are skipped, so the XML always satisfies BR-CO-25. Paid invoices
-(nothing due) get no default due date. The aggregate is available as
+(nothing due) never get a due date (BT-9), whatever the provider returns; its text is kept. The aggregate is available as
 `InvoicePaymentTermsProviderInterface` (`tmonier_facturx.payment_terms_provider`).
 
 ## Extension point: transmission to a platform

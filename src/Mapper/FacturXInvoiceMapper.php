@@ -18,7 +18,6 @@ use Tmonier\SyliusFacturXPlugin\Model\Note;
 use Tmonier\SyliusFacturXPlugin\Model\Party;
 use Tmonier\SyliusFacturXPlugin\Model\PaymentInstructions;
 use Tmonier\SyliusFacturXPlugin\Model\VatBreakdown;
-use Tmonier\SyliusFacturXPlugin\PaymentTerms\ChannelSettingsPaymentTermsProvider;
 use Tmonier\SyliusFacturXPlugin\PaymentTerms\CompositeInvoicePaymentTermsProvider;
 use Tmonier\SyliusFacturXPlugin\PaymentTerms\InvoicePaymentTermsProviderInterface;
 
@@ -51,7 +50,10 @@ final class FacturXInvoiceMapper implements FacturXInvoiceMapperInterface
     /** Without provider, the channel settings give the due date and payment terms (behaviour of 1.0). */
     public function __construct(?InvoicePaymentTermsProviderInterface $paymentTermsProvider = null)
     {
-        $this->paymentTermsProvider = $paymentTermsProvider ?? new CompositeInvoicePaymentTermsProvider([]);
+        // The composite applies the BR-CO-25 fallback and drops due dates when nothing is due.
+        $this->paymentTermsProvider = $paymentTermsProvider instanceof CompositeInvoicePaymentTermsProvider
+            ? $paymentTermsProvider
+            : new CompositeInvoicePaymentTermsProvider(null === $paymentTermsProvider ? [] : [$paymentTermsProvider]);
     }
 
     public function map(
@@ -75,8 +77,7 @@ final class FacturXInvoiceMapper implements FacturXInvoiceMapperInterface
         $issueDate = \DateTimeImmutable::createFromInterface($invoice->issuedAt());
 
         [$deliveryName, $deliveryAddress] = $this->mapDelivery($invoice);
-        $paymentTerms = $this->paymentTermsProvider->provide($invoice, $settings, $duePayable)
-            ?? (new ChannelSettingsPaymentTermsProvider())->provide($invoice, $settings, $duePayable);
+        $paymentTerms = $this->paymentTermsProvider->provide($invoice, $settings, $duePayable);
 
         return new FacturXInvoice(
             number: $invoice->number(),

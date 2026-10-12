@@ -79,6 +79,16 @@ final class InvoicePaymentTermsProviderTest extends TestCase
         self::assertTrue($paid->isEmpty());
     }
 
+    public function testAPaidInvoiceNeverGetsADueDate(): void
+    {
+        $composite = new CompositeInvoicePaymentTermsProvider([self::provider(new InvoicePaymentTerms(new \DateTimeImmutable('2026-12-31'), 'Paid on account'))]);
+
+        $terms = $composite->provide(self::multiRateInvoice(), self::settings(), 0);
+
+        self::assertNull($terms->dueDate);
+        self::assertSame('Paid on account', $terms->description);
+    }
+
     private static function provider(?InvoicePaymentTerms $terms): InvoicePaymentTermsProviderInterface
     {
         return new class($terms) implements InvoicePaymentTermsProviderInterface {

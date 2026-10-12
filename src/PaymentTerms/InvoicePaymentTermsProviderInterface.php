@@ -17,7 +17,8 @@ interface InvoicePaymentTermsProviderInterface
 {
     /**
      * Null when the provider does not handle this invoice. When `$duePayableAmount` (cents) is
-     * positive, terms without due date nor description are ignored (rule BR-CO-25).
+     * positive, terms without due date nor description are ignored (rule BR-CO-25); when it is
+     * zero (paid invoice), the due date is dropped and only the description is kept.
      */
     public function provide(InvoiceInterface $invoice, ChannelSettingsInterface $settings, int $duePayableAmount): ?InvoicePaymentTerms;
 }

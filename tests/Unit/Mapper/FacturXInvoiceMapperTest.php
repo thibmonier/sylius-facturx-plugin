@@ -265,6 +265,27 @@ final class FacturXInvoiceMapperTest extends TestCase
         self::assertSame('Paiement à 30 jours', $document->paymentTerms);
     }
 
+    public function testAProviderPassedDirectlyFollowsTheCompositeRules(): void
+    {
+        $provider = new class() implements InvoicePaymentTermsProviderInterface {
+            public function provide(InvoiceInterface $invoice, ChannelSettingsInterface $settings, int $duePayableAmount): InvoicePaymentTerms
+            {
+                return $duePayableAmount > 0 ? new InvoicePaymentTerms() : new InvoicePaymentTerms(new \DateTimeImmutable('2026-12-31'), 'Paid');
+            }
+        };
+        $mapper = new FacturXInvoiceMapper($provider);
+
+        // Empty terms for an amount due: channel settings (BR-CO-25).
+        $due = $mapper->map(self::multiRateInvoice(InvoiceInterface::PAYMENT_STATE_PENDING), self::settings());
+        self::assertSame('2026-11-09', $due->dueDate?->format('Y-m-d'));
+        self::assertSame('Paiement à 30 jours', $due->paymentTerms);
+
+        // Paid invoice: no due date.
+        $paid = $mapper->map(self::multiRateInvoice(InvoiceInterface::PAYMENT_STATE_COMPLETED), self::settings());
+        self::assertNull($paid->dueDate);
+        self::assertSame('Paid', $paid->paymentTerms);
+    }
+
     public function testVatOnDebitsIsTheVatPointDateCode5(): void
     {
         $settings = self::settings();
