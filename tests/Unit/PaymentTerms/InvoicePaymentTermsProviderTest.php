@@ -45,9 +45,9 @@ final class InvoicePaymentTermsProviderTest extends TestCase
     public function testTheFirstProviderReturningTermsWins(): void
     {
         $composite = new CompositeInvoicePaymentTermsProvider([
-            self::provider(null),
-            self::provider(new InvoicePaymentTerms(new \DateTimeImmutable('2026-12-31'), 'Net 60 days')),
-            self::provider(new InvoicePaymentTerms(new \DateTimeImmutable('2027-01-31'), 'Net 90 days')),
+            $this->provider(null),
+            $this->provider(new InvoicePaymentTerms(new \DateTimeImmutable('2026-12-31'), 'Net 60 days')),
+            $this->provider(new InvoicePaymentTerms(new \DateTimeImmutable('2027-01-31'), 'Net 90 days')),
         ]);
 
         $terms = $composite->provide(self::multiRateInvoice(InvoiceInterface::PAYMENT_STATE_PENDING), self::settings(), 4583);
@@ -58,7 +58,7 @@ final class InvoicePaymentTermsProviderTest extends TestCase
 
     public function testTheChannelSettingsApplyWhenNoProviderHandlesTheInvoice(): void
     {
-        $composite = new CompositeInvoicePaymentTermsProvider([self::provider(null)]);
+        $composite = new CompositeInvoicePaymentTermsProvider([$this->provider(null)]);
 
         $terms = $composite->provide(self::multiRateInvoice(InvoiceInterface::PAYMENT_STATE_PENDING), self::settings(), 4583);
 
@@ -68,7 +68,7 @@ final class InvoicePaymentTermsProviderTest extends TestCase
 
     public function testEmptyTermsAreIgnoredWhenAnAmountIsDueBR_CO_25(): void
     {
-        $composite = new CompositeInvoicePaymentTermsProvider([self::provider(new InvoicePaymentTerms())]);
+        $composite = new CompositeInvoicePaymentTermsProvider([$this->provider(new InvoicePaymentTerms())]);
         $invoice = self::multiRateInvoice(InvoiceInterface::PAYMENT_STATE_PENDING);
 
         $due = $composite->provide($invoice, self::settings(), 4583);
@@ -81,7 +81,7 @@ final class InvoicePaymentTermsProviderTest extends TestCase
 
     public function testAPaidInvoiceNeverGetsADueDate(): void
     {
-        $composite = new CompositeInvoicePaymentTermsProvider([self::provider(new InvoicePaymentTerms(new \DateTimeImmutable('2026-12-31'), 'Paid on account'))]);
+        $composite = new CompositeInvoicePaymentTermsProvider([$this->provider(new InvoicePaymentTerms(new \DateTimeImmutable('2026-12-31'), 'Paid on account'))]);
 
         $terms = $composite->provide(self::multiRateInvoice(), self::settings(), 0);
 
@@ -89,7 +89,7 @@ final class InvoicePaymentTermsProviderTest extends TestCase
         self::assertSame('Paid on account', $terms->description);
     }
 
-    private static function provider(?InvoicePaymentTerms $terms): InvoicePaymentTermsProviderInterface
+    private function provider(?InvoicePaymentTerms $terms): InvoicePaymentTermsProviderInterface
     {
         return new class($terms) implements InvoicePaymentTermsProviderInterface {
             public function __construct(private readonly ?InvoicePaymentTerms $terms)

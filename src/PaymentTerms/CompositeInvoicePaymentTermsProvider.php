@@ -12,12 +12,12 @@ use Tmonier\SyliusFacturXPlugin\Entity\ChannelSettingsInterface;
  * invoice with an amount due always gets a due date or payment terms (BR-CO-25). Invoices with
  * nothing due never get a due date.
  */
-final class CompositeInvoicePaymentTermsProvider implements InvoicePaymentTermsProviderInterface
+final readonly class CompositeInvoicePaymentTermsProvider implements InvoicePaymentTermsProviderInterface
 {
     /** @param iterable<InvoicePaymentTermsProviderInterface> $providers */
     public function __construct(
-        private readonly iterable $providers,
-        private readonly InvoicePaymentTermsProviderInterface $fallback = new ChannelSettingsPaymentTermsProvider(),
+        private iterable $providers,
+        private InvoicePaymentTermsProviderInterface $fallback = new ChannelSettingsPaymentTermsProvider(),
     ) {
     }
 
@@ -36,6 +36,6 @@ final class CompositeInvoicePaymentTermsProvider implements InvoicePaymentTermsP
     /** BT-9 is only written for invoices with an amount due (paid invoices keep the terms text). */
     private function withoutDueDateWhenNothingIsDue(InvoicePaymentTerms $terms, int $duePayableAmount): InvoicePaymentTerms
     {
-        return $duePayableAmount <= 0 && null !== $terms->dueDate ? new InvoicePaymentTerms(null, $terms->description) : $terms;
+        return $duePayableAmount <= 0 && $terms->dueDate instanceof \DateTimeImmutable ? new InvoicePaymentTerms(null, $terms->description) : $terms;
     }
 }

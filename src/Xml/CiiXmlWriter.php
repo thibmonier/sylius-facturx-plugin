@@ -35,17 +35,17 @@ final class CiiXmlWriter implements CiiXmlWriterInterface
             $document->setDocumentSellerOrderReferencedDocument($invoice->salesOrderReference);
         }
 
-        if (null !== $invoice->deliveryAddress) {
+        if ($invoice->deliveryAddress instanceof \Tmonier\SyliusFacturXPlugin\Model\Address) {
             $document->setDocumentShipTo($invoice->deliveryName);
             $address = $invoice->deliveryAddress;
             $document->setDocumentShipToAddress($address->line1, $address->line2, null, $address->postcode, $address->city, $address->countryCode, $address->subdivision);
         }
-        if (null !== $invoice->deliveryDate) {
+        if ($invoice->deliveryDate instanceof \DateTimeImmutable) {
             $document->setDocumentSupplyChainEvent($invoice->deliveryDate);
         }
 
         $payment = $invoice->paymentInstructions;
-        if (null !== $payment && null !== $payment->iban) {
+        if ($payment instanceof \Tmonier\SyliusFacturXPlugin\Model\PaymentInstructions && null !== $payment->iban) {
             $document->addDocumentPaymentMeanToCreditTransfer($payment->iban, $payment->accountName, null, $payment->bic, $payment->remittanceInformation);
         }
 
@@ -53,8 +53,8 @@ final class CiiXmlWriter implements CiiXmlWriterInterface
             $document->addDocumentTax(
                 $breakdown->category,
                 'VAT',
-                self::amount($breakdown->taxableAmount),
-                self::amount($breakdown->taxAmount),
+                $this->amount($breakdown->taxableAmount),
+                $this->amount($breakdown->taxAmount),
                 null === $breakdown->rate ? null : (float) $breakdown->rate,
                 $breakdown->exemptionReason,
                 $breakdown->exemptionReasonCode,
@@ -65,33 +65,33 @@ final class CiiXmlWriter implements CiiXmlWriterInterface
             );
         }
 
-        if (null !== $invoice->paymentTerms || null !== $invoice->dueDate) {
+        if (null !== $invoice->paymentTerms || $invoice->dueDate instanceof \DateTimeImmutable) {
             $document->addDocumentPaymentTerm($invoice->paymentTerms, $invoice->dueDate);
         }
 
         $document->setDocumentSummation(
-            self::amount($invoice->grandTotalAmount),
-            self::amount($invoice->duePayableAmount),
-            self::amount($invoice->lineTotalAmount),
+            $this->amount($invoice->grandTotalAmount),
+            $this->amount($invoice->duePayableAmount),
+            $this->amount($invoice->lineTotalAmount),
             null,
             null,
-            self::amount($invoice->taxBasisTotalAmount),
-            self::amount($invoice->taxTotalAmount),
+            $this->amount($invoice->taxBasisTotalAmount),
+            $this->amount($invoice->taxTotalAmount),
             null,
-            self::amount($invoice->prepaidAmount),
+            $this->amount($invoice->prepaidAmount),
         );
 
         foreach ($invoice->lines as $line) {
             $document->addNewPosition($line->id);
             $document->setDocumentPositionProductDetails($line->name, $line->description, $line->sellerItemId);
             if (null !== $line->grossUnitPrice) {
-                $document->setDocumentPositionGrossPrice(self::amount($line->grossUnitPrice));
-                $document->addDocumentPositionGrossPriceAllowanceCharge(self::amount($line->unitDiscount()), false);
+                $document->setDocumentPositionGrossPrice($this->amount($line->grossUnitPrice));
+                $document->addDocumentPositionGrossPriceAllowanceCharge($this->amount($line->unitDiscount()), false);
             }
-            $document->setDocumentPositionNetPrice(self::amount($line->netUnitPrice));
+            $document->setDocumentPositionNetPrice($this->amount($line->netUnitPrice));
             $document->setDocumentPositionQuantity((float) $line->quantity, FacturXInvoiceMapper::UNIT_CODE);
             $document->addDocumentPositionTax($line->vatCategory, 'VAT', null === $line->vatRate ? null : (float) $line->vatRate);
-            $document->setDocumentPositionLineSummation(self::amount($line->netAmount));
+            $document->setDocumentPositionLineSummation($this->amount($line->netAmount));
         }
 
         return $document->getContent();
@@ -133,7 +133,7 @@ final class CiiXmlWriter implements CiiXmlWriterInterface
     }
 
     /** Minor units (cents) to a decimal amount. */
-    private static function amount(int $minorUnits): float
+    private function amount(int $minorUnits): float
     {
         return round($minorUnits / 100, 2);
     }

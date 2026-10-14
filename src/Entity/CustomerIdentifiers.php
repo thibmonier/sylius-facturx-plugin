@@ -55,7 +55,7 @@ class CustomerIdentifiers implements CustomerIdentifiersInterface
 
     public function setSiren(?string $siren): void
     {
-        $this->siren = self::normalizeIdentifier($siren);
+        $this->siren = $this->normalizeIdentifier($siren);
     }
 
     public function getVatNumber(): ?string
@@ -65,7 +65,7 @@ class CustomerIdentifiers implements CustomerIdentifiersInterface
 
     public function setVatNumber(?string $vatNumber): void
     {
-        $this->vatNumber = self::normalizeIdentifier($vatNumber);
+        $this->vatNumber = $this->normalizeIdentifier($vatNumber);
     }
 
     public function getElectronicAddress(): ?string
@@ -86,7 +86,7 @@ class CustomerIdentifiers implements CustomerIdentifiersInterface
 
     public function setElectronicAddressScheme(?string $electronicAddressScheme): void
     {
-        $this->electronicAddressScheme = self::normalizeIdentifier($electronicAddressScheme);
+        $this->electronicAddressScheme = $this->normalizeIdentifier($electronicAddressScheme);
     }
 
     public function isEmpty(): bool
@@ -94,7 +94,7 @@ class CustomerIdentifiers implements CustomerIdentifiersInterface
         return null === $this->companyName && null === $this->siren && null === $this->vatNumber && null === $this->electronicAddress;
     }
 
-    private static function normalizeIdentifier(?string $value): ?string
+    private function normalizeIdentifier(?string $value): ?string
     {
         $value = null === $value ? null : strtoupper((string) preg_replace('/\s+/', '', $value));
 

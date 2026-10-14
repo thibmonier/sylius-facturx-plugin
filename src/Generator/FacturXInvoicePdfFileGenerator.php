@@ -18,13 +18,13 @@ use Tmonier\SyliusFacturXPlugin\Event\FacturXInvoiceGenerated;
  * A failure never prevents the invoice from being created: it is logged and the original PDF
  * is kept (the XML can still be downloaded from the admin once the problem is fixed).
  */
-final class FacturXInvoicePdfFileGenerator implements InvoicePdfFileGeneratorInterface
+final readonly class FacturXInvoicePdfFileGenerator implements InvoicePdfFileGeneratorInterface
 {
     public function __construct(
-        private readonly InvoicePdfFileGeneratorInterface $decorated,
-        private readonly FacturXGeneratorInterface $facturXGenerator,
-        private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly LoggerInterface $logger,
+        private InvoicePdfFileGeneratorInterface $decorated,
+        private FacturXGeneratorInterface $facturXGenerator,
+        private EventDispatcherInterface $eventDispatcher,
+        private LoggerInterface $logger,
     ) {
     }
 

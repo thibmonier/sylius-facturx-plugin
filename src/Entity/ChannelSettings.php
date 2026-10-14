@@ -126,7 +126,7 @@ class ChannelSettings implements ChannelSettingsInterface
 
     public function setLegalName(?string $legalName): void
     {
-        $this->legalName = self::normalize($legalName);
+        $this->legalName = $this->normalize($legalName);
     }
 
     public function getSiren(): ?string
@@ -136,7 +136,7 @@ class ChannelSettings implements ChannelSettingsInterface
 
     public function setSiren(?string $siren): void
     {
-        $this->siren = self::normalizeIdentifier($siren);
+        $this->siren = $this->normalizeIdentifier($siren);
     }
 
     public function getSiret(): ?string
@@ -146,7 +146,7 @@ class ChannelSettings implements ChannelSettingsInterface
 
     public function setSiret(?string $siret): void
     {
-        $this->siret = self::normalizeIdentifier($siret);
+        $this->siret = $this->normalizeIdentifier($siret);
     }
 
     public function getVatNumber(): ?string
@@ -156,7 +156,7 @@ class ChannelSettings implements ChannelSettingsInterface
 
     public function setVatNumber(?string $vatNumber): void
     {
-        $this->vatNumber = self::normalizeIdentifier($vatNumber);
+        $this->vatNumber = $this->normalizeIdentifier($vatNumber);
     }
 
     public function getLegalForm(): ?string
@@ -166,7 +166,7 @@ class ChannelSettings implements ChannelSettingsInterface
 
     public function setLegalForm(?string $legalForm): void
     {
-        $this->legalForm = self::normalize($legalForm);
+        $this->legalForm = $this->normalize($legalForm);
     }
 
     public function getTradeRegister(): ?string
@@ -176,7 +176,7 @@ class ChannelSettings implements ChannelSettingsInterface
 
     public function setTradeRegister(?string $tradeRegister): void
     {
-        $this->tradeRegister = self::normalize($tradeRegister);
+        $this->tradeRegister = $this->normalize($tradeRegister);
     }
 
     public function getElectronicAddress(): ?string
@@ -186,7 +186,7 @@ class ChannelSettings implements ChannelSettingsInterface
 
     public function setElectronicAddress(?string $electronicAddress): void
     {
-        $this->electronicAddress = self::normalize($electronicAddress);
+        $this->electronicAddress = $this->normalize($electronicAddress);
     }
 
     public function getElectronicAddressScheme(): ?string
@@ -196,7 +196,7 @@ class ChannelSettings implements ChannelSettingsInterface
 
     public function setElectronicAddressScheme(?string $electronicAddressScheme): void
     {
-        $this->electronicAddressScheme = self::normalizeIdentifier($electronicAddressScheme);
+        $this->electronicAddressScheme = $this->normalizeIdentifier($electronicAddressScheme);
     }
 
     public function getPaymentTerms(): ?string
@@ -206,7 +206,7 @@ class ChannelSettings implements ChannelSettingsInterface
 
     public function setPaymentTerms(?string $paymentTerms): void
     {
-        $this->paymentTerms = self::normalize($paymentTerms);
+        $this->paymentTerms = $this->normalize($paymentTerms);
     }
 
     public function getIban(): ?string
@@ -216,7 +216,7 @@ class ChannelSettings implements ChannelSettingsInterface
 
     public function setIban(?string $iban): void
     {
-        $this->iban = self::normalizeIdentifier($iban);
+        $this->iban = $this->normalizeIdentifier($iban);
     }
 
     public function getBic(): ?string
@@ -226,7 +226,7 @@ class ChannelSettings implements ChannelSettingsInterface
 
     public function setBic(?string $bic): void
     {
-        $this->bic = self::normalizeIdentifier($bic);
+        $this->bic = $this->normalizeIdentifier($bic);
     }
 
     public function getVatExemptionReason(): ?string
@@ -236,7 +236,7 @@ class ChannelSettings implements ChannelSettingsInterface
 
     public function setVatExemptionReason(?string $vatExemptionReason): void
     {
-        $this->vatExemptionReason = self::normalize($vatExemptionReason);
+        $this->vatExemptionReason = $this->normalize($vatExemptionReason);
     }
 
     public function getVatExemptionReasonCode(): ?string
@@ -246,7 +246,7 @@ class ChannelSettings implements ChannelSettingsInterface
 
     public function setVatExemptionReasonCode(?string $vatExemptionReasonCode): void
     {
-        $this->vatExemptionReasonCode = self::normalizeIdentifier($vatExemptionReasonCode);
+        $this->vatExemptionReasonCode = $this->normalizeIdentifier($vatExemptionReasonCode);
     }
 
     public function getLatePaymentPenaltiesNote(): ?string
@@ -256,7 +256,7 @@ class ChannelSettings implements ChannelSettingsInterface
 
     public function setLatePaymentPenaltiesNote(?string $latePaymentPenaltiesNote): void
     {
-        $this->latePaymentPenaltiesNote = self::normalize($latePaymentPenaltiesNote);
+        $this->latePaymentPenaltiesNote = $this->normalize($latePaymentPenaltiesNote);
     }
 
     public function getRecoveryIndemnityNote(): ?string
@@ -266,7 +266,7 @@ class ChannelSettings implements ChannelSettingsInterface
 
     public function setRecoveryIndemnityNote(?string $recoveryIndemnityNote): void
     {
-        $this->recoveryIndemnityNote = self::normalize($recoveryIndemnityNote);
+        $this->recoveryIndemnityNote = $this->normalize($recoveryIndemnityNote);
     }
 
     public function getEarlyPaymentDiscountNote(): ?string
@@ -276,16 +276,16 @@ class ChannelSettings implements ChannelSettingsInterface
 
     public function setEarlyPaymentDiscountNote(?string $earlyPaymentDiscountNote): void
     {
-        $this->earlyPaymentDiscountNote = self::normalize($earlyPaymentDiscountNote);
+        $this->earlyPaymentDiscountNote = $this->normalize($earlyPaymentDiscountNote);
     }
 
     /** Identifiers are stored without spaces and upper-cased: "fr 12 345 678 901" becomes "FR12345678901". */
-    private static function normalizeIdentifier(?string $value): ?string
+    private function normalizeIdentifier(?string $value): ?string
     {
-        return self::normalize(null === $value ? null : strtoupper((string) preg_replace('/\s+/', '', $value)));
+        return $this->normalize(null === $value ? null : strtoupper((string) preg_replace('/\s+/', '', $value)));
     }
 
-    private static function normalize(?string $value): ?string
+    private function normalize(?string $value): ?string
     {
         $value = null === $value ? null : trim($value);
 

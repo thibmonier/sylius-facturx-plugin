@@ -62,7 +62,7 @@ final class FontWidthsNormalizer
      */
     private function visitResources(PdfParser $parser, ?PdfType $resources, array &$visited, array &$fixed, int $depth): void
     {
-        if (null === $resources || $depth > 10) {
+        if (!$resources instanceof \setasign\Fpdi\PdfParser\Type\PdfType || $depth > 10) {
             return;
         }
 
@@ -93,7 +93,7 @@ final class FontWidthsNormalizer
                 $visited[$number] = true;
                 $stream = PdfType::resolve($xObject, $parser);
                 $dictionary = $stream instanceof PdfStream ? PdfValues::streamDictionary($stream) : null;
-                if (null !== $dictionary && 'Form' === PdfValues::name(PdfValues::raw($dictionary, 'Subtype'))) {
+                if ($dictionary instanceof \setasign\Fpdi\PdfParser\Type\PdfDictionary && 'Form' === PdfValues::name(PdfValues::raw($dictionary, 'Subtype'))) {
                     $this->visitResources($parser, PdfValues::raw($dictionary, 'Resources'), $visited, $fixed, $depth + 1);
                 }
             }
@@ -138,7 +138,7 @@ final class FontWidthsNormalizer
         }
 
         $metrics = $this->metrics($parser, $font);
-        if (null === $metrics || $metrics->numGlyphs > self::MAX_GLYPHS) {
+        if (!$metrics instanceof \Tmonier\SyliusFacturXPlugin\Pdf\Font\TrueTypeMetrics || $metrics->numGlyphs > self::MAX_GLYPHS) {
             return;
         }
 
@@ -148,7 +148,7 @@ final class FontWidthsNormalizer
         if ($map instanceof PdfStream) {
             $unpacked = unpack('n*', $map->getUnfilteredStream());
             $cidToGid = array_values(array_map(PdfValues::int(...), false === $unpacked ? [] : $unpacked));
-        } elseif (null !== $map && 'Identity' !== PdfValues::name($map)) {
+        } elseif ($map instanceof \setasign\Fpdi\PdfParser\Type\PdfType && 'Identity' !== PdfValues::name($map)) {
             return;
         }
 
@@ -186,7 +186,7 @@ final class FontWidthsNormalizer
         $metrics = $this->metrics($parser, $font);
         $firstChar = PdfValues::number(PdfValues::get($font, 'FirstChar', $parser));
         $current = PdfValues::get($font, 'Widths', $parser);
-        if (null === $metrics || null === $firstChar || !$current instanceof PdfArray) {
+        if (!$metrics instanceof \Tmonier\SyliusFacturXPlugin\Pdf\Font\TrueTypeMetrics || null === $firstChar || !$current instanceof PdfArray) {
             return;
         }
 

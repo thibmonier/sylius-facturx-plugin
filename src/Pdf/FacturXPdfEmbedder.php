@@ -17,13 +17,13 @@ use Tmonier\SyliusFacturXPlugin\Pdf\Font\FontWidthsNormalizer;
  * The glyph widths of the source PDF are corrected first (PDF/A rule 6.2.11.5): when that is not
  * possible, the source PDF is merged as it is and the problem is logged.
  */
-final class FacturXPdfEmbedder implements FacturXPdfEmbedderInterface
+final readonly class FacturXPdfEmbedder implements FacturXPdfEmbedderInterface
 {
     public function __construct(
-        private readonly string $attachmentRelationship = 'Alternative',
-        private readonly bool $deterministic = false,
-        private readonly FontWidthsNormalizer $fontWidthsNormalizer = new FontWidthsNormalizer(),
-        private readonly LoggerInterface $logger = new NullLogger(),
+        private string $attachmentRelationship = 'Alternative',
+        private bool $deterministic = false,
+        private FontWidthsNormalizer $fontWidthsNormalizer = new FontWidthsNormalizer(),
+        private LoggerInterface $logger = new NullLogger(),
     ) {
     }
 

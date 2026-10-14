@@ -30,7 +30,7 @@ use Tmonier\SyliusFacturXPlugin\PaymentTerms\InvoicePaymentTermsProviderInterfac
  * few cents, within the tolerance of rule BR-CO-17. The totals are checked against the invoice
  * total to the cent.
  */
-final class FacturXInvoiceMapper implements FacturXInvoiceMapperInterface
+final readonly class FacturXInvoiceMapper implements FacturXInvoiceMapperInterface
 {
     public const UNIT_CODE = 'C62';
 
@@ -45,7 +45,7 @@ final class FacturXInvoiceMapper implements FacturXInvoiceMapperInterface
         'G' => 'Export outside the EU',
     ];
 
-    private readonly InvoicePaymentTermsProviderInterface $paymentTermsProvider;
+    private InvoicePaymentTermsProviderInterface $paymentTermsProvider;
 
     /** Without provider, the channel settings give the due date and payment terms (behaviour of 1.0). */
     public function __construct(?InvoicePaymentTermsProviderInterface $paymentTermsProvider = null)
@@ -53,7 +53,7 @@ final class FacturXInvoiceMapper implements FacturXInvoiceMapperInterface
         // The composite applies the BR-CO-25 fallback and drops due dates when nothing is due.
         $this->paymentTermsProvider = $paymentTermsProvider instanceof CompositeInvoicePaymentTermsProvider
             ? $paymentTermsProvider
-            : new CompositeInvoicePaymentTermsProvider(null === $paymentTermsProvider ? [] : [$paymentTermsProvider]);
+            : new CompositeInvoicePaymentTermsProvider($paymentTermsProvider instanceof \Tmonier\SyliusFacturXPlugin\PaymentTerms\InvoicePaymentTermsProviderInterface ? [$paymentTermsProvider] : []);
     }
 
     public function map(
@@ -181,17 +181,17 @@ final class FacturXInvoiceMapper implements FacturXInvoiceMapperInterface
     {
         $shopBillingData = $invoice->shopBillingData();
 
-        $name = $settings->getLegalName() ?? self::nonEmpty($shopBillingData->getCompany()) ?? self::nonEmpty($invoice->channel()->getName());
+        $name = $settings->getLegalName() ?? $this->nonEmpty($shopBillingData->getCompany()) ?? $this->nonEmpty($invoice->channel()->getName());
         if (null === $name) {
             throw FacturXException::missingSellerData('no legal name');
         }
 
-        $countryCode = self::nonEmpty($shopBillingData->getCountryCode());
+        $countryCode = $this->nonEmpty($shopBillingData->getCountryCode());
         if (null === $countryCode) {
             throw FacturXException::missingSellerData('no country in the shop billing data of the channel');
         }
 
-        $vatId = $settings->getVatNumber() ?? self::nonEmpty($shopBillingData->getTaxId());
+        $vatId = $settings->getVatNumber() ?? $this->nonEmpty($shopBillingData->getTaxId());
         if (null === $settings->getSiren() && null === $settings->getSiret() && null === $vatId) {
             throw FacturXException::missingSellerData('no SIREN, SIRET or VAT number (rule BR-CO-26)');
         }
@@ -202,9 +202,9 @@ final class FacturXInvoiceMapper implements FacturXInvoiceMapperInterface
             name: $name,
             address: new Address(
                 countryCode: $countryCode,
-                line1: self::nonEmpty($shopBillingData->getStreet()),
-                postcode: self::nonEmpty($shopBillingData->getPostcode()),
-                city: self::nonEmpty($shopBillingData->getCity()),
+                line1: $this->nonEmpty($shopBillingData->getStreet()),
+                postcode: $this->nonEmpty($shopBillingData->getPostcode()),
+                city: $this->nonEmpty($shopBillingData->getCity()),
             ),
             legalRegistrationId: $settings->getSiren(),
             globalId: $settings->getSiret(),
@@ -217,7 +217,7 @@ final class FacturXInvoiceMapper implements FacturXInvoiceMapperInterface
 
     private function mapBuyer(BillingDataInterface $billingData, ?CustomerIdentifiersInterface $identifiers): Party
     {
-        $name = self::nonEmpty($billingData->company())
+        $name = $this->nonEmpty($billingData->company())
             ?? $identifiers?->getCompanyName()
             ?? trim($billingData->firstName() . ' ' . $billingData->lastName());
 
@@ -225,10 +225,10 @@ final class FacturXInvoiceMapper implements FacturXInvoiceMapperInterface
             name: $name,
             address: new Address(
                 countryCode: $billingData->countryCode(),
-                line1: self::nonEmpty($billingData->street()),
-                postcode: self::nonEmpty($billingData->postcode()),
-                city: self::nonEmpty($billingData->city()),
-                subdivision: self::nonEmpty($billingData->provinceName()) ?? self::nonEmpty($billingData->provinceCode()),
+                line1: $this->nonEmpty($billingData->street()),
+                postcode: $this->nonEmpty($billingData->postcode()),
+                city: $this->nonEmpty($billingData->city()),
+                subdivision: $this->nonEmpty($billingData->provinceName()) ?? $this->nonEmpty($billingData->provinceCode()),
             ),
             legalRegistrationId: $identifiers?->getSiren(),
             vatId: $identifiers?->getVatNumber(),
@@ -246,27 +246,27 @@ final class FacturXInvoiceMapper implements FacturXInvoiceMapperInterface
     private function mapDelivery(InvoiceInterface $invoice): array
     {
         $shippingAddress = $invoice->order()->getShippingAddress();
-        if (!$shippingAddress instanceof AddressInterface || null === self::nonEmpty($shippingAddress->getCountryCode())) {
+        if (!$shippingAddress instanceof AddressInterface || null === $this->nonEmpty($shippingAddress->getCountryCode())) {
             return [null, null];
         }
 
         $billingData = $invoice->billingData();
-        $sameAddress = self::normalize($shippingAddress->getStreet()) === self::normalize($billingData->street()) &&
-            self::normalize($shippingAddress->getPostcode()) === self::normalize($billingData->postcode()) &&
-            self::normalize($shippingAddress->getCity()) === self::normalize($billingData->city()) &&
+        $sameAddress = $this->normalize($shippingAddress->getStreet()) === $this->normalize($billingData->street()) &&
+            $this->normalize($shippingAddress->getPostcode()) === $this->normalize($billingData->postcode()) &&
+            $this->normalize($shippingAddress->getCity()) === $this->normalize($billingData->city()) &&
             $shippingAddress->getCountryCode() === $billingData->countryCode();
         if ($sameAddress) {
             return [null, null];
         }
 
-        $name = self::nonEmpty($shippingAddress->getCompany()) ?? self::nonEmpty(trim(sprintf('%s %s', $shippingAddress->getFirstName() ?? '', $shippingAddress->getLastName() ?? '')));
+        $name = $this->nonEmpty($shippingAddress->getCompany()) ?? $this->nonEmpty(trim(sprintf('%s %s', $shippingAddress->getFirstName() ?? '', $shippingAddress->getLastName() ?? '')));
 
         return [$name, new Address(
             countryCode: (string) $shippingAddress->getCountryCode(),
-            line1: self::nonEmpty($shippingAddress->getStreet()),
-            postcode: self::nonEmpty($shippingAddress->getPostcode()),
-            city: self::nonEmpty($shippingAddress->getCity()),
-            subdivision: self::nonEmpty($shippingAddress->getProvinceName()) ?? self::nonEmpty($shippingAddress->getProvinceCode()),
+            line1: $this->nonEmpty($shippingAddress->getStreet()),
+            postcode: $this->nonEmpty($shippingAddress->getPostcode()),
+            city: $this->nonEmpty($shippingAddress->getCity()),
+            subdivision: $this->nonEmpty($shippingAddress->getProvinceName()) ?? $this->nonEmpty($shippingAddress->getProvinceCode()),
         )];
     }
 
@@ -318,14 +318,14 @@ final class FacturXInvoiceMapper implements FacturXInvoiceMapperInterface
         );
     }
 
-    private static function nonEmpty(?string $value): ?string
+    private function nonEmpty(?string $value): ?string
     {
         $value = null === $value ? null : trim($value);
 
         return '' === $value ? null : $value;
     }
 
-    private static function normalize(?string $value): string
+    private function normalize(?string $value): string
     {
         return mb_strtolower((string) preg_replace('/\s+/', ' ', trim((string) $value)));
     }

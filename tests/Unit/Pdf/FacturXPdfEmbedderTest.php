@@ -20,7 +20,7 @@ final class FacturXPdfEmbedderTest extends TestCase
     {
         $xml = $this->xml();
 
-        $pdf = (new FacturXPdfEmbedder())->embed(self::sourcePdf(), $xml);
+        $pdf = (new FacturXPdfEmbedder())->embed($this->sourcePdf(), $xml);
 
         self::assertSame($xml, self::assertFacturXPdf($pdf));
         self::assertStringContainsString('/F (factur-x.xml)', $pdf);
@@ -29,7 +29,7 @@ final class FacturXPdfEmbedderTest extends TestCase
 
     public function testTheAttachmentRelationshipIsConfigurable(): void
     {
-        $pdf = (new FacturXPdfEmbedder('Data'))->embed(self::sourcePdf(), $this->xml());
+        $pdf = (new FacturXPdfEmbedder('Data'))->embed($this->sourcePdf(), $this->xml());
 
         self::assertFacturXPdf($pdf, 'Data');
     }
@@ -38,7 +38,7 @@ final class FacturXPdfEmbedderTest extends TestCase
     {
         $embedder = new FacturXPdfEmbedder('Alternative', true);
         $xml = $this->xml();
-        $source = self::sourcePdf();
+        $source = $this->sourcePdf();
 
         self::assertSame(md5($embedder->embed($source, $xml)), md5($embedder->embed($source, $xml)));
     }
@@ -52,7 +52,7 @@ final class FacturXPdfEmbedderTest extends TestCase
             $source->Cell(0, 10, sprintf('Page %d', $page));
         }
 
-        $pdf = (new FacturXPdfEmbedder())->embed(self::render($source), $this->xml());
+        $pdf = (new FacturXPdfEmbedder())->embed($this->render($source), $this->xml());
 
         self::assertSame(3, preg_match_all('#/Type\s*/Page\b#', $pdf));
     }
@@ -62,17 +62,17 @@ final class FacturXPdfEmbedderTest extends TestCase
         return (new CiiXmlWriter())->write((new FacturXInvoiceMapper())->map(self::multiRateInvoice(), self::settings()));
     }
 
-    private static function sourcePdf(): string
+    private function sourcePdf(): string
     {
         $pdf = new \FPDF();
         $pdf->AddPage();
         $pdf->SetFont('Helvetica', '', 14);
         $pdf->Cell(0, 10, 'Invoice 2026/10/000001');
 
-        return self::render($pdf);
+        return $this->render($pdf);
     }
 
-    private static function render(\FPDF $pdf): string
+    private function render(\FPDF $pdf): string
     {
         $content = $pdf->Output('S');
         self::assertIsString($content);

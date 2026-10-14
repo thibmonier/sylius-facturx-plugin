@@ -65,7 +65,7 @@ final class FacturXInvoicePdfFileGeneratorTest extends TestCase
     public function testAFailingListenerDoesNotPreventTheInvoice(): void
     {
         $dispatcher = new EventDispatcher();
-        $dispatcher->addListener(FacturXInvoiceGenerated::NAME, static function (): void {
+        $dispatcher->addListener(FacturXInvoiceGenerated::NAME, static function (): never {
             throw new \RuntimeException('The PA is down');
         });
 
@@ -114,9 +114,9 @@ final class FacturXInvoicePdfFileGeneratorTest extends TestCase
     }
 }
 
-final class StubFacturXGenerator implements FacturXGeneratorInterface
+final readonly class StubFacturXGenerator implements FacturXGeneratorInterface
 {
-    public function __construct(private readonly bool $enabled = true, private readonly ?string $failure = null)
+    public function __construct(private bool $enabled = true, private ?string $failure = null)
     {
     }
 

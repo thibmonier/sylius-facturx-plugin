@@ -44,7 +44,7 @@ final class PdfValues
     {
         $value = self::raw($dictionary, $key);
 
-        return null === $value ? null : PdfType::resolve($value, $parser);
+        return $value instanceof \setasign\Fpdi\PdfParser\Type\PdfType ? PdfType::resolve($value, $parser) : null;
     }
 
     public static function set(PdfDictionary $dictionary, string $key, PdfType $value): void
@@ -56,7 +56,6 @@ final class PdfValues
 
     public static function streamDictionary(PdfStream $stream): ?PdfDictionary
     {
-        /** @var mixed $dictionary */
         $dictionary = $stream->value;
 
         return $dictionary instanceof PdfDictionary ? $dictionary : null;
