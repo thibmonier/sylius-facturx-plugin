@@ -207,6 +207,10 @@ Grid actions are added to `sylius_admin_channel` (`tmonier_facturx`) and
 `tmonier_facturx.mapper.invoice` (invoice → data), `tmonier_facturx.xml.writer` (data → XML),
 `tmonier_facturx.pdf.embedder` (PDF + XML → PDF/A-3).
 
+The XML download route (`tmonier_facturx_admin_invoice_download_xml`) checks
+`InvoiceVoter::ACCESS` (from `sylius/invoicing-plugin`) before serving the file, mirroring the
+access control applied to the core PDF download (`DownloadInvoiceAction`).
+
 ## Limitations
 
 - **No transmission to a *plateforme agréée* (PA)** and no e-reporting: in France, issuing an

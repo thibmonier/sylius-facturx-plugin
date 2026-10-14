@@ -17,5 +17,9 @@ tmonier_facturx_admin_customer_identifiers:
 tmonier_facturx_admin_invoice_download_xml:
     path: /invoices/{id}/factur-x.xml
     methods: [GET]
+    requirements:
+        # Any identifier without a slash: UUIDs by default, but the invoice identifier
+        # generator (sylius_invoicing.generator.invoice_identifier) can be replaced.
+        id: '[^/]+'
     defaults:
         _controller: tmonier_facturx.controller.admin::downloadXmlAction
