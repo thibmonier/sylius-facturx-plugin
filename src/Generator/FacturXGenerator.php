@@ -15,27 +15,27 @@ use Tmonier\SyliusFacturXPlugin\Repository\ChannelSettingsRepositoryInterface;
 use Tmonier\SyliusFacturXPlugin\Repository\CustomerIdentifiersRepositoryInterface;
 use Tmonier\SyliusFacturXPlugin\Xml\CiiXmlWriterInterface;
 
-final class FacturXGenerator implements FacturXGeneratorInterface
+final readonly class FacturXGenerator implements FacturXGeneratorInterface
 {
     public function __construct(
-        private readonly ChannelSettingsRepositoryInterface $channelSettingsRepository,
-        private readonly CustomerIdentifiersRepositoryInterface $customerIdentifiersRepository,
-        private readonly FacturXInvoiceMapperInterface $mapper,
-        private readonly CiiXmlWriterInterface $xmlWriter,
-        private readonly FacturXPdfEmbedderInterface $pdfEmbedder,
-        private readonly bool $enabled = true,
+        private ChannelSettingsRepositoryInterface $channelSettingsRepository,
+        private CustomerIdentifiersRepositoryInterface $customerIdentifiersRepository,
+        private FacturXInvoiceMapperInterface $mapper,
+        private CiiXmlWriterInterface $xmlWriter,
+        private FacturXPdfEmbedderInterface $pdfEmbedder,
+        private bool $enabled = true,
     ) {
     }
 
     public function isEnabledFor(InvoiceInterface $invoice): bool
     {
-        return null !== $this->findSettings($invoice);
+        return $this->findSettings($invoice) instanceof \Tmonier\SyliusFacturXPlugin\Entity\ChannelSettingsInterface;
     }
 
     public function buildDocument(InvoiceInterface $invoice): FacturXInvoice
     {
         $settings = $this->findSettings($invoice);
-        if (null === $settings) {
+        if (!$settings instanceof \Tmonier\SyliusFacturXPlugin\Entity\ChannelSettingsInterface) {
             throw FacturXException::notEnabledForChannel((string) $invoice->channel()->getCode());
         }
 
@@ -67,6 +67,6 @@ final class FacturXGenerator implements FacturXGeneratorInterface
 
         $settings = $this->channelSettingsRepository->findOneByChannel($invoice->channel());
 
-        return null !== $settings && $settings->isEnabled() ? $settings : null;
+        return $settings instanceof \Tmonier\SyliusFacturXPlugin\Entity\ChannelSettingsInterface && $settings->isEnabled() ? $settings : null;
     }
 }

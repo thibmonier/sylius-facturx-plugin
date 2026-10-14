@@ -59,7 +59,7 @@ final class FacturXController extends AbstractController
         }
 
         $settings = $this->channelSettingsRepository->findOneByChannel($channel);
-        if (null === $settings) {
+        if (!$settings instanceof \Tmonier\SyliusFacturXPlugin\Entity\ChannelSettingsInterface) {
             $settings = $this->channelSettingsFactory->createNew();
             $settings->setChannel($channel);
         }
@@ -90,7 +90,7 @@ final class FacturXController extends AbstractController
         }
 
         $identifiers = $this->customerIdentifiersRepository->findOneByCustomer($customer);
-        if (null === $identifiers) {
+        if (!$identifiers instanceof \Tmonier\SyliusFacturXPlugin\Entity\CustomerIdentifiersInterface) {
             $identifiers = $this->customerIdentifiersFactory->createNew();
             $identifiers->setCustomer($customer);
         }

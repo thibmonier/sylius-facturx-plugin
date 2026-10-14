@@ -8,17 +8,17 @@ namespace Tmonier\SyliusFacturXPlugin\Pdf\Font;
  * Glyph advance widths and character map of an embedded TrueType font program (FontFile2):
  * the minimum needed to check the widths that a PDF declares for the font.
  */
-final class TrueTypeMetrics
+final readonly class TrueTypeMetrics
 {
     /**
      * @param list<int> $advances advance width of each glyph id, in font units
      * @param array<string, array<int, int>> $cmaps code => glyph id, keyed by "platform.encoding"
      */
     private function __construct(
-        public readonly int $unitsPerEm,
-        public readonly int $numGlyphs,
-        private readonly array $advances,
-        private readonly array $cmaps,
+        public int $unitsPerEm,
+        public int $numGlyphs,
+        private array $advances,
+        private array $cmaps,
     ) {
     }
 

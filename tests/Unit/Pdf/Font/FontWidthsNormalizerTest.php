@@ -119,7 +119,8 @@ final class FontWidthsNormalizerTest extends TestCase
 
         $result = [];
         $entries = PdfValues::items($widths);
-        for ($i = 0; $i < count($entries); $i += 2) {
+        $counter = count($entries);
+        for ($i = 0; $i < $counter; $i += 2) {
             $first = $entries[$i];
             $list = $entries[$i + 1];
             self::assertInstanceOf(PdfNumeric::class, $first);

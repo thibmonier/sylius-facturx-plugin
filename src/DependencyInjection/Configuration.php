@@ -61,7 +61,6 @@ final class Configuration implements ConfigurationInterface
     private function resourceNode(string $name, string $model, string $interface, string $repository): ArrayNodeDefinition
     {
         $node = (new TreeBuilder($name))->getRootNode();
-        \assert($node instanceof ArrayNodeDefinition);
 
         $node
             ->addDefaultsIfNotSet()

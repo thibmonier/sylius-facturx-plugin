@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Tmonier\SyliusFacturXPlugin\PaymentTerms;
 
 /** Payment due date (BT-9) and payment terms (BT-20) of one invoice. */
-final class InvoicePaymentTerms
+final readonly class InvoicePaymentTerms
 {
-    public readonly ?\DateTimeImmutable $dueDate;
+    public ?\DateTimeImmutable $dueDate;
 
-    public readonly ?string $description;
+    public ?string $description;
 
     public function __construct(?\DateTimeInterface $dueDate = null, ?string $description = null)
     {
-        $this->dueDate = null === $dueDate ? null : \DateTimeImmutable::createFromInterface($dueDate);
+        $this->dueDate = $dueDate instanceof \DateTimeInterface ? \DateTimeImmutable::createFromInterface($dueDate) : null;
         $description = null === $description ? null : trim($description);
         $this->description = '' === $description ? null : $description;
     }
@@ -21,6 +21,6 @@ final class InvoicePaymentTerms
     /** Rule BR-CO-25: an invoice with an amount due needs a due date or payment terms. */
     public function isEmpty(): bool
     {
-        return null === $this->dueDate && null === $this->description;
+        return !$this->dueDate instanceof \DateTimeImmutable && null === $this->description;
     }
 }
