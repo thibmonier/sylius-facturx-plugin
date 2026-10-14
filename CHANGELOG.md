@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Security
+
+- `downloadXmlAction` now checks `InvoiceVoter::ACCESS` (from `sylius/invoicing-plugin`) before
+  serving the Factur-X XML, mirroring the access control applied to the PDF download of the core
+  plugin (`DownloadInvoiceAction`). Applications that restrict invoice access via a custom voter
+  now have the XML download protected as well.
+
 ## 1.1.0 (2026-10-12)
 
 ### Added

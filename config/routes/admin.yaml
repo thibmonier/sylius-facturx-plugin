@@ -17,5 +17,7 @@ tmonier_facturx_admin_customer_identifiers:
 tmonier_facturx_admin_invoice_download_xml:
     path: /invoices/{id}/factur-x.xml
     methods: [GET]
+    requirements:
+        id: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
     defaults:
         _controller: tmonier_facturx.controller.admin::downloadXmlAction

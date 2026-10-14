@@ -11,6 +11,7 @@ use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Repository\CustomerRepositoryInterface;
 use Sylius\InvoicingPlugin\Doctrine\ORM\InvoiceRepositoryInterface;
 use Sylius\InvoicingPlugin\Entity\InvoiceInterface;
+use Sylius\InvoicingPlugin\Security\Voter\InvoiceVoter;
 use Sylius\Resource\Factory\FactoryInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\HeaderUtils;
@@ -123,6 +124,10 @@ final class FacturXController extends AbstractController
         $invoice = $this->invoiceRepository->find($id);
         if (!$invoice instanceof InvoiceInterface) {
             throw new NotFoundHttpException('Invoice not found.');
+        }
+
+        if (!$this->isGranted(InvoiceVoter::ACCESS, $invoice)) {
+            throw $this->createAccessDeniedException();
         }
 
         try {
