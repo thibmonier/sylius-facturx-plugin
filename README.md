@@ -1,5 +1,7 @@
 # Sylius Factur-X Plugin
 
+> Français : [README.fr.md](README.fr.md) <!-- vitrine:lang -->
+
 [![Build](https://github.com/thibmonier/sylius-facturx-plugin/actions/workflows/build.yaml/badge.svg)](https://github.com/thibmonier/sylius-facturx-plugin/actions/workflows/build.yaml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
@@ -277,6 +279,14 @@ write `etc/build/factur-x.pdf` and `etc/build/factur-x.xml` (and, with a real wk
 ```bash
 java -jar Mustang-CLI-2.26.0.jar --no-notices --action validate --source etc/build/factur-x.pdf
 ```
+
+<!-- vitrine:demo-b2b:start -->
+## B2B demo
+
+This plugin is used in the [Sylius B2B demo](https://github.com/thibmonier/sylius-b2b-demo): a Sylius 2.3 shop with fictitious sample data where the B2B plugins work together. The source code, setup and fixtures of the demo are in that repository.
+
+The demo is an example, not a production setup.
+<!-- vitrine:demo-b2b:end -->
 
 ## License
 
