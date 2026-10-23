@@ -214,6 +214,8 @@ Des actions de grille sont ajoutées à `sylius_admin_channel` (`tmonier_facturx
 `tmonier_facturx.mapper.invoice` (facture → données), `tmonier_facturx.xml.writer` (données → XML),
 `tmonier_facturx.pdf.embedder` (PDF + XML → PDF/A-3).
 
+Un projet décore `tmonier_facturx.xml.writer` comme le montre le [guide de surcharge](https://sylius-b2b.thibaut-monier.fr/fr_FR/surcharge) de la démo B2B, qui couvre aussi les gabarits, les formulaires et les entités.
+
 La route de téléchargement du XML (`tmonier_facturx_admin_invoice_download_xml`) vérifie
 `InvoiceVoter::ACCESS` (de `sylius/invoicing-plugin`) avant de servir le fichier, à l'image du
 contrôle d'accès appliqué au téléchargement du PDF du cœur (`DownloadInvoiceAction`).
