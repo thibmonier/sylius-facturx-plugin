@@ -4,18 +4,13 @@ declare(strict_types=1);
 
 namespace Tmonier\SyliusFacturXPlugin\Mapper;
 
-use Sylius\Component\Core\Model\AddressInterface;
-use Sylius\InvoicingPlugin\Entity\BillingDataInterface;
 use Sylius\InvoicingPlugin\Entity\InvoiceInterface;
-use Sylius\InvoicingPlugin\Entity\LineItemInterface;
 use Tmonier\SyliusFacturXPlugin\Entity\ChannelSettingsInterface;
 use Tmonier\SyliusFacturXPlugin\Entity\CustomerIdentifiersInterface;
 use Tmonier\SyliusFacturXPlugin\Exception\FacturXException;
-use Tmonier\SyliusFacturXPlugin\Model\Address;
 use Tmonier\SyliusFacturXPlugin\Model\FacturXInvoice;
 use Tmonier\SyliusFacturXPlugin\Model\InvoiceLine;
 use Tmonier\SyliusFacturXPlugin\Model\Note;
-use Tmonier\SyliusFacturXPlugin\Model\Party;
 use Tmonier\SyliusFacturXPlugin\Model\PaymentInstructions;
 use Tmonier\SyliusFacturXPlugin\Model\VatBreakdown;
 use Tmonier\SyliusFacturXPlugin\PaymentTerms\CompositeInvoicePaymentTermsProvider;
@@ -37,19 +32,13 @@ final readonly class FacturXInvoiceMapper implements FacturXInvoiceMapperInterfa
     /** VAT point date code (BT-8, UNTDID 2005 in CII) when the seller pays the VAT on debits: date of invoice. */
     public const VAT_ON_DEBITS_DATE_CODE = '5';
 
-    private const DEFAULT_EXEMPTION_REASONS = [
-        'E' => 'Exempt from VAT',
-        'O' => 'Not subject to VAT',
-        'AE' => 'Reverse charge',
-        'K' => 'Intra-community supply of goods',
-        'G' => 'Export outside the EU',
-    ];
-
     private InvoicePaymentTermsProviderInterface $paymentTermsProvider;
 
-    private bool $dppLinkEnabled;
+    private InvoiceLineMapper $lineMapper;
 
-    private ?PassportUrlResolverInterface $passportUrlResolver;
+    private PartyMapper $partyMapper;
+
+    private DeliveryMapper $deliveryMapper;
 
     /** Without provider, the channel settings give the due date and payment terms (behaviour of 1.0). */
     public function __construct(
@@ -57,12 +46,12 @@ final readonly class FacturXInvoiceMapper implements FacturXInvoiceMapperInterfa
         bool $dppLinkEnabled = false,
         ?PassportUrlResolverInterface $passportUrlResolver = null,
     ) {
-        // The composite applies the BR-CO-25 fallback and drops due dates when nothing is due.
         $this->paymentTermsProvider = $paymentTermsProvider instanceof CompositeInvoicePaymentTermsProvider
             ? $paymentTermsProvider
-            : new CompositeInvoicePaymentTermsProvider($paymentTermsProvider instanceof \Tmonier\SyliusFacturXPlugin\PaymentTerms\InvoicePaymentTermsProviderInterface ? [$paymentTermsProvider] : []);
-        $this->dppLinkEnabled = $dppLinkEnabled;
-        $this->passportUrlResolver = $passportUrlResolver;
+            : new CompositeInvoicePaymentTermsProvider($paymentTermsProvider instanceof InvoicePaymentTermsProviderInterface ? [$paymentTermsProvider] : []);
+        $this->lineMapper = new InvoiceLineMapper($dppLinkEnabled, $passportUrlResolver);
+        $this->partyMapper = new PartyMapper();
+        $this->deliveryMapper = new DeliveryMapper();
     }
 
     public function map(
@@ -70,8 +59,8 @@ final readonly class FacturXInvoiceMapper implements FacturXInvoiceMapperInterfa
         ChannelSettingsInterface $settings,
         ?CustomerIdentifiersInterface $buyerIdentifiers = null,
     ): FacturXInvoice {
-        $lines = $this->mapLines($invoice, $settings);
-        $vatBreakdown = $this->buildVatBreakdown($lines, $settings);
+        $lines = $this->lineMapper->mapLines($invoice, $settings);
+        $vatBreakdown = $this->lineMapper->buildVatBreakdown($lines, $settings);
 
         $lineTotal = array_sum(array_map(static fn (InvoiceLine $line): int => $line->netAmount, $lines));
         $taxTotal = array_sum(array_map(static fn (VatBreakdown $breakdown): int => $breakdown->taxAmount, $vatBreakdown));
@@ -85,15 +74,15 @@ final readonly class FacturXInvoiceMapper implements FacturXInvoiceMapperInterfa
         $duePayable = $grandTotal - $prepaid;
         $issueDate = \DateTimeImmutable::createFromInterface($invoice->issuedAt());
 
-        [$deliveryName, $deliveryAddress] = $this->mapDelivery($invoice);
+        [$deliveryName, $deliveryAddress] = $this->deliveryMapper->mapDelivery($invoice);
         $paymentTerms = $this->paymentTermsProvider->provide($invoice, $settings, $duePayable);
 
         return new FacturXInvoice(
             number: $invoice->number(),
             issueDate: $issueDate,
             currencyCode: $invoice->currencyCode(),
-            seller: $this->mapSeller($invoice, $settings),
-            buyer: $this->mapBuyer($invoice->billingData(), $buyerIdentifiers),
+            seller: $this->partyMapper->mapSeller($invoice, $settings),
+            buyer: $this->partyMapper->mapBuyer($invoice->billingData(), $buyerIdentifiers),
             lines: $lines,
             vatBreakdown: $vatBreakdown,
             lineTotalAmount: $lineTotal,
@@ -106,201 +95,13 @@ final readonly class FacturXInvoiceMapper implements FacturXInvoiceMapperInterfa
             salesOrderReference: $invoice->order()->getNumber(),
             deliveryName: $deliveryName,
             deliveryAddress: $deliveryAddress,
-            deliveryDate: $this->deliveryDate($invoice),
+            deliveryDate: $this->deliveryMapper->deliveryDate($invoice),
             notes: $this->mapNotes($settings),
             paymentInstructions: $this->mapPaymentInstructions($invoice, $settings),
             paymentTerms: $paymentTerms->description,
             dueDate: $paymentTerms->dueDate,
             vatPointDateCode: $settings->isVatOnDebits() ? self::VAT_ON_DEBITS_DATE_CODE : null,
         );
-    }
-
-    /** @return list<InvoiceLine> */
-    private function mapLines(InvoiceInterface $invoice, ChannelSettingsInterface $settings): array
-    {
-        $lines = [];
-        $position = 0;
-
-        /** @var LineItemInterface $lineItem */
-        foreach ($invoice->lineItems() as $lineItem) {
-            $rate = TaxRateParser::parse($lineItem->taxRate());
-            if (TaxRateParser::isZero($rate) && 0 === $lineItem->taxTotal()) {
-                $category = $settings->getZeroVatCategory();
-                $rate = 'O' === $category ? null : '0';
-            } else {
-                $category = 'S';
-                $rate ??= '0';
-            }
-
-            $netUnitPrice = $lineItem->discountedUnitNetPrice();
-            $grossUnitPrice = $lineItem->unitPrice() > $netUnitPrice ? $lineItem->unitPrice() : null;
-            $variantName = $lineItem->variantName();
-            $variantCode = $lineItem->variantCode();
-
-            $documentReference = null;
-            if ($this->dppLinkEnabled && null !== $this->passportUrlResolver && null !== $variantCode) {
-                $documentReference = $this->passportUrlResolver->resolve($variantCode);
-            }
-
-            $lines[] = new InvoiceLine(
-                id: (string) ++$position,
-                name: $lineItem->name(),
-                quantity: $lineItem->quantity(),
-                netUnitPrice: $netUnitPrice,
-                netAmount: $lineItem->subtotal(),
-                vatCategory: $category,
-                vatRate: $rate,
-                vatAmount: $lineItem->taxTotal(),
-                grossUnitPrice: $grossUnitPrice,
-                description: null !== $variantName && '' !== $variantName && $variantName !== $lineItem->name() ? $variantName : null,
-                sellerItemId: $variantCode,
-                documentReference: $documentReference,
-            );
-        }
-
-        return $lines;
-    }
-
-    /**
-     * @param list<InvoiceLine> $lines
-     *
-     * @return list<VatBreakdown>
-     */
-    private function buildVatBreakdown(array $lines, ChannelSettingsInterface $settings): array
-    {
-        /** @var array<string, array{category: string, rate: ?string, taxable: int, tax: int}> $groups */
-        $groups = [];
-        foreach ($lines as $line) {
-            $key = $line->vatCategory . '|' . ($line->vatRate ?? '');
-            $groups[$key] ??= ['category' => $line->vatCategory, 'rate' => $line->vatRate, 'taxable' => 0, 'tax' => 0];
-            $groups[$key]['taxable'] += $line->netAmount;
-            $groups[$key]['tax'] += $line->vatAmount;
-        }
-
-        $breakdown = [];
-        foreach ($groups as $group) {
-            $exempted = !in_array($group['category'], ['S', 'Z'], true);
-            $breakdown[] = new VatBreakdown(
-                category: $group['category'],
-                rate: $group['rate'],
-                taxableAmount: $group['taxable'],
-                taxAmount: $group['tax'],
-                exemptionReason: $exempted ? ($settings->getVatExemptionReason() ?? self::DEFAULT_EXEMPTION_REASONS[$group['category']] ?? null) : null,
-                exemptionReasonCode: $exempted ? $settings->getVatExemptionReasonCode() : null,
-            );
-        }
-
-        return $breakdown;
-    }
-
-    private function mapSeller(InvoiceInterface $invoice, ChannelSettingsInterface $settings): Party
-    {
-        $shopBillingData = $invoice->shopBillingData();
-
-        $name = $settings->getLegalName() ?? $this->nonEmpty($shopBillingData->getCompany()) ?? $this->nonEmpty($invoice->channel()->getName());
-        if (null === $name) {
-            throw FacturXException::missingSellerData('no legal name');
-        }
-
-        $countryCode = $this->nonEmpty($shopBillingData->getCountryCode());
-        if (null === $countryCode) {
-            throw FacturXException::missingSellerData('no country in the shop billing data of the channel');
-        }
-
-        $vatId = $settings->getVatNumber() ?? $this->nonEmpty($shopBillingData->getTaxId());
-        if (null === $settings->getSiren() && null === $settings->getSiret() && null === $vatId) {
-            throw FacturXException::missingSellerData('no SIREN, SIRET or VAT number (rule BR-CO-26)');
-        }
-
-        $legalInformation = implode(' - ', array_filter([$settings->getLegalForm(), $settings->getTradeRegister()]));
-
-        return new Party(
-            name: $name,
-            address: new Address(
-                countryCode: $countryCode,
-                line1: $this->nonEmpty($shopBillingData->getStreet()),
-                postcode: $this->nonEmpty($shopBillingData->getPostcode()),
-                city: $this->nonEmpty($shopBillingData->getCity()),
-            ),
-            legalRegistrationId: $settings->getSiren(),
-            globalId: $settings->getSiret(),
-            vatId: $vatId,
-            legalInformation: '' === $legalInformation ? null : $legalInformation,
-            electronicAddress: $settings->getElectronicAddress(),
-            electronicAddressScheme: null === $settings->getElectronicAddress() ? null : $settings->getElectronicAddressScheme(),
-        );
-    }
-
-    private function mapBuyer(BillingDataInterface $billingData, ?CustomerIdentifiersInterface $identifiers): Party
-    {
-        $name = $this->nonEmpty($billingData->company())
-            ?? $identifiers?->getCompanyName()
-            ?? trim($billingData->firstName() . ' ' . $billingData->lastName());
-
-        return new Party(
-            name: $name,
-            address: new Address(
-                countryCode: $billingData->countryCode(),
-                line1: $this->nonEmpty($billingData->street()),
-                postcode: $this->nonEmpty($billingData->postcode()),
-                city: $this->nonEmpty($billingData->city()),
-                subdivision: $this->nonEmpty($billingData->provinceName()) ?? $this->nonEmpty($billingData->provinceCode()),
-            ),
-            legalRegistrationId: $identifiers?->getSiren(),
-            vatId: $identifiers?->getVatNumber(),
-            electronicAddress: $identifiers?->getElectronicAddress(),
-            electronicAddressScheme: null === $identifiers?->getElectronicAddress() ? null : $identifiers->getElectronicAddressScheme(),
-        );
-    }
-
-    /**
-     * The delivery address (BG-13) is only given when it differs from the billing address, as
-     * the French reform requires.
-     *
-     * @return array{?string, ?Address}
-     */
-    private function mapDelivery(InvoiceInterface $invoice): array
-    {
-        $shippingAddress = $invoice->order()->getShippingAddress();
-        if (!$shippingAddress instanceof AddressInterface || null === $this->nonEmpty($shippingAddress->getCountryCode())) {
-            return [null, null];
-        }
-
-        $billingData = $invoice->billingData();
-        $sameAddress = $this->normalize($shippingAddress->getStreet()) === $this->normalize($billingData->street()) &&
-            $this->normalize($shippingAddress->getPostcode()) === $this->normalize($billingData->postcode()) &&
-            $this->normalize($shippingAddress->getCity()) === $this->normalize($billingData->city()) &&
-            $shippingAddress->getCountryCode() === $billingData->countryCode();
-        if ($sameAddress) {
-            return [null, null];
-        }
-
-        $name = $this->nonEmpty($shippingAddress->getCompany()) ?? $this->nonEmpty(trim(sprintf('%s %s', $shippingAddress->getFirstName() ?? '', $shippingAddress->getLastName() ?? '')));
-
-        return [$name, new Address(
-            countryCode: (string) $shippingAddress->getCountryCode(),
-            line1: $this->nonEmpty($shippingAddress->getStreet()),
-            postcode: $this->nonEmpty($shippingAddress->getPostcode()),
-            city: $this->nonEmpty($shippingAddress->getCity()),
-            subdivision: $this->nonEmpty($shippingAddress->getProvinceName()) ?? $this->nonEmpty($shippingAddress->getProvinceCode()),
-        )];
-    }
-
-    /**
-     * Actual delivery date (BT-72): the last shipping date of the order, nothing when no shipment
-     * is shipped yet (the delivery group of the XML then stays empty, PEPPOL-EN16931-R008 warning).
-     */
-    private function deliveryDate(InvoiceInterface $invoice): ?\DateTimeImmutable
-    {
-        $shippedAt = null;
-        foreach ($invoice->order()->getShipments() as $shipment) {
-            $date = $shipment->getShippedAt();
-            if (null !== $date && (null === $shippedAt || $date > $shippedAt)) {
-                $shippedAt = $date;
-            }
-        }
-
-        return null === $shippedAt ? null : \DateTimeImmutable::createFromInterface($shippedAt);
     }
 
     /** @return list<Note> */
@@ -332,17 +133,5 @@ final readonly class FacturXInvoiceMapper implements FacturXInvoiceMapperInterfa
             bic: $settings->getBic(),
             remittanceInformation: $invoice->number(),
         );
-    }
-
-    private function nonEmpty(?string $value): ?string
-    {
-        $value = null === $value ? null : trim($value);
-
-        return '' === $value ? null : $value;
-    }
-
-    private function normalize(?string $value): string
-    {
-        return mb_strtolower((string) preg_replace('/\s+/', ' ', trim((string) $value)));
     }
 }
