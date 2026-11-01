@@ -24,6 +24,7 @@ use Tmonier\SyliusFacturXPlugin\Repository\ChannelSettingsRepositoryInterface;
 use Tmonier\SyliusFacturXPlugin\Repository\CustomerIdentifiersRepositoryInterface;
 use Tmonier\SyliusFacturXPlugin\Twig\FacturXExtension;
 use Tmonier\SyliusFacturXPlugin\Validator\Constraints\CompanyIdentifierValidator;
+use Tmonier\SyliusFacturXPlugin\Mapper\PassportUrlResolverInterface;
 use Tmonier\SyliusFacturXPlugin\Xml\CiiXmlWriter;
 use Tmonier\SyliusFacturXPlugin\Xml\CiiXmlWriterInterface;
 
@@ -47,7 +48,11 @@ return static function (ContainerConfigurator $container): void {
 
     $services
         ->set('tmonier_facturx.mapper.invoice', FacturXInvoiceMapper::class)
-        ->args([service('tmonier_facturx.payment_terms_provider')])
+        ->args([
+            service('tmonier_facturx.payment_terms_provider'),
+            param('tmonier_facturx.dpp_link_in_invoice'),
+            service(PassportUrlResolverInterface::class)->nullOnInvalid(),
+        ])
     ;
     $services->alias(FacturXInvoiceMapperInterface::class, 'tmonier_facturx.mapper.invoice');
 

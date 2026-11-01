@@ -25,7 +25,7 @@ final class TmonierSyliusFacturXExtension extends AbstractResourceExtension impl
 
     public function load(array $configs, ContainerBuilder $container): void
     {
-        /** @var array{enabled: bool, profile: string, attachment_relationship: string, driver: string, resources: array<string, mixed>} $config */
+        /** @var array{enabled: bool, profile: string, attachment_relationship: string, dpp_link_in_invoice: bool, driver: string, resources: array<string, mixed>} $config */
         $config = $this->processConfiguration(new Configuration(), $configs);
 
         $this->registerResources('tmonier_facturx', $config['driver'], $config['resources'], $container);
@@ -33,6 +33,7 @@ final class TmonierSyliusFacturXExtension extends AbstractResourceExtension impl
         $container->setParameter('tmonier_facturx.enabled', $config['enabled']);
         $container->setParameter('tmonier_facturx.profile', $config['profile']);
         $container->setParameter('tmonier_facturx.attachment_relationship', $config['attachment_relationship']);
+        $container->setParameter('tmonier_facturx.dpp_link_in_invoice', $config['dpp_link_in_invoice']);
 
         $container->registerForAutoconfiguration(InvoicePaymentTermsProviderInterface::class)->addTag(self::TAG_INVOICE_PAYMENT_TERMS_PROVIDER);
 

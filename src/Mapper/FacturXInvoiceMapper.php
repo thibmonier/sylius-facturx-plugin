@@ -47,13 +47,22 @@ final readonly class FacturXInvoiceMapper implements FacturXInvoiceMapperInterfa
 
     private InvoicePaymentTermsProviderInterface $paymentTermsProvider;
 
+    private bool $dppLinkEnabled;
+
+    private ?PassportUrlResolverInterface $passportUrlResolver;
+
     /** Without provider, the channel settings give the due date and payment terms (behaviour of 1.0). */
-    public function __construct(?InvoicePaymentTermsProviderInterface $paymentTermsProvider = null)
-    {
+    public function __construct(
+        ?InvoicePaymentTermsProviderInterface $paymentTermsProvider = null,
+        bool $dppLinkEnabled = false,
+        ?PassportUrlResolverInterface $passportUrlResolver = null,
+    ) {
         // The composite applies the BR-CO-25 fallback and drops due dates when nothing is due.
         $this->paymentTermsProvider = $paymentTermsProvider instanceof CompositeInvoicePaymentTermsProvider
             ? $paymentTermsProvider
             : new CompositeInvoicePaymentTermsProvider($paymentTermsProvider instanceof \Tmonier\SyliusFacturXPlugin\PaymentTerms\InvoicePaymentTermsProviderInterface ? [$paymentTermsProvider] : []);
+        $this->dppLinkEnabled = $dppLinkEnabled;
+        $this->passportUrlResolver = $passportUrlResolver;
     }
 
     public function map(
@@ -126,6 +135,12 @@ final readonly class FacturXInvoiceMapper implements FacturXInvoiceMapperInterfa
             $netUnitPrice = $lineItem->discountedUnitNetPrice();
             $grossUnitPrice = $lineItem->unitPrice() > $netUnitPrice ? $lineItem->unitPrice() : null;
             $variantName = $lineItem->variantName();
+            $variantCode = $lineItem->variantCode();
+
+            $documentReference = null;
+            if ($this->dppLinkEnabled && null !== $this->passportUrlResolver && null !== $variantCode) {
+                $documentReference = $this->passportUrlResolver->resolve($variantCode);
+            }
 
             $lines[] = new InvoiceLine(
                 id: (string) ++$position,
@@ -138,7 +153,8 @@ final readonly class FacturXInvoiceMapper implements FacturXInvoiceMapperInterfa
                 vatAmount: $lineItem->taxTotal(),
                 grossUnitPrice: $grossUnitPrice,
                 description: null !== $variantName && '' !== $variantName && $variantName !== $lineItem->name() ? $variantName : null,
-                sellerItemId: $lineItem->variantCode(),
+                sellerItemId: $variantCode,
+                documentReference: $documentReference,
             );
         }
 

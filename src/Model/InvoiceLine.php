@@ -32,6 +32,8 @@ final readonly class InvoiceLine
         public ?string $description = null,
         /** BT-155 */
         public ?string $sellerItemId = null,
+        /** BT-128, digital product passport URL (AdditionalReferencedDocument) */
+        public ?string $documentReference = null,
     ) {
     }
 

@@ -94,7 +94,9 @@ final class CiiXmlWriter implements CiiXmlWriterInterface
             $document->setDocumentPositionLineSummation($this->amount($line->netAmount));
         }
 
-        return $document->getContent();
+        $xml = $document->getContent();
+
+        return $this->addDocumentReferencesToLines($xml, $invoice->lines);
     }
 
     private function writeSeller(ZugferdDocumentBuilder $document, Party $seller): void
@@ -136,5 +138,99 @@ final class CiiXmlWriter implements CiiXmlWriterInterface
     private function amount(int $minorUnits): float
     {
         return round($minorUnits / 100, 2);
+    }
+
+    /**
+     * Post-processes the XML to add AdditionalReferencedDocument elements to line items.
+     *
+     * The horstoeko builder doesn't support adding AdditionalReferencedDocument in the
+     * SpecifiedLineTradeSettlement for EN16931 profile, so we inject it manually via DOM.
+     *
+     * @param list<\Tmonier\SyliusFacturXPlugin\Model\InvoiceLine> $lines
+     */
+    private function addDocumentReferencesToLines(string $xml, array $lines): string
+    {
+        // Collect lines that have a document reference
+        $lineReferences = [];
+        foreach ($lines as $line) {
+            if (null !== $line->documentReference) {
+                $lineReferences[$line->id] = $line->documentReference;
+            }
+        }
+
+        if ([] === $lineReferences) {
+            return $xml; // No references to add
+        }
+
+        $dom = new \DOMDocument();
+        $dom->loadXML($xml);
+        $xpath = new \DOMXPath($dom);
+        $xpath->registerNamespace('ram', 'urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100');
+        $xpath->registerNamespace('rsm', 'urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100');
+
+        // For each line item, insert the AdditionalReferencedDocument if needed
+        $lineItems = $xpath->query('//ram:IncludedSupplyChainTradeLineItem');
+        if (false === $lineItems) {
+            return $xml;
+        }
+
+        foreach ($lineItems as $lineItem) {
+            \assert($lineItem instanceof \DOMElement);
+
+            // Find the line ID
+            $lineIdNodes = $xpath->query('.//ram:AssociatedDocumentLineDocument/ram:LineID', $lineItem);
+            if (false === $lineIdNodes) {
+                continue;
+            }
+            $lineIdNode = $lineIdNodes->item(0);
+            if (!$lineIdNode instanceof \DOMNode) {
+                continue;
+            }
+            $lineId = trim($lineIdNode->textContent);
+            if ('' === $lineId) {
+                continue;
+            }
+
+            if (!isset($lineReferences[$lineId])) {
+                continue; // This line has no document reference
+            }
+
+            // Find the SpecifiedLineTradeSettlement element
+            $settlementNodes = $xpath->query('.//ram:SpecifiedLineTradeSettlement', $lineItem);
+            if (false === $settlementNodes) {
+                continue;
+            }
+            $settlement = $settlementNodes->item(0);
+            if (!$settlement instanceof \DOMElement) {
+                continue;
+            }
+
+            // Create the AdditionalReferencedDocument element
+            $refDoc = $dom->createElementNS('urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100', 'ram:AdditionalReferencedDocument');
+
+            $issuerId = $dom->createElementNS('urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100', 'ram:IssuerAssignedID');
+            $issuerId->textContent = $lineReferences[$lineId];
+            $refDoc->appendChild($issuerId);
+
+            $typeCode = $dom->createElementNS('urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100', 'ram:TypeCode');
+            $typeCode->textContent = '916';
+            $refDoc->appendChild($typeCode);
+
+            // Insert after SpecifiedTradeSettlementLineMonetarySummation (to respect XSD order)
+            $summationNodes = $xpath->query('.//ram:SpecifiedTradeSettlementLineMonetarySummation', $settlement);
+            if (false === $summationNodes) {
+                $settlement->appendChild($refDoc);
+
+                continue;
+            }
+            $summation = $summationNodes->item(0);
+            if ($summation instanceof \DOMElement && null !== $summation->nextSibling) {
+                $settlement->insertBefore($refDoc, $summation->nextSibling);
+            } else {
+                $settlement->appendChild($refDoc);
+            }
+        }
+
+        return (string) $dom->saveXML();
     }
 }

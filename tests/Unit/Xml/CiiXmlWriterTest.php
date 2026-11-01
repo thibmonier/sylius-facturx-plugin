@@ -209,6 +209,64 @@ final class CiiXmlWriterTest extends TestCase
         self::assertValidAgainstXsd($xml);
     }
 
+    public function testItWritesTheDigitalProductPassportLinkAsAdditionalReferencedDocument(): void
+    {
+        $invoice = self::multiRateInvoice();
+        $mapper = new FacturXInvoiceMapper(
+            paymentTermsProvider: null,
+            dppLinkEnabled: true,
+            passportUrlResolver: new class() implements \Tmonier\SyliusFacturXPlugin\Mapper\PassportUrlResolverInterface {
+                public function resolve(string $productCode): ?string
+                {
+                    return match ($productCode) {
+                        'TSHIRT-M' => 'https://example.com/passport/tshirt-m',
+                        'BOOK' => 'https://example.com/passport/book',
+                        default => null,
+                    };
+                }
+            },
+        );
+
+        $xml = (new CiiXmlWriter())->write($mapper->map($invoice, self::settings()));
+
+        $line1Refs = self::xmlValues($xml, '//ram:IncludedSupplyChainTradeLineItem[1]//ram:AdditionalReferencedDocument/ram:IssuerAssignedID');
+        $line2Refs = self::xmlValues($xml, '//ram:IncludedSupplyChainTradeLineItem[2]//ram:AdditionalReferencedDocument/ram:IssuerAssignedID');
+        $line3Refs = self::xmlValues($xml, '//ram:IncludedSupplyChainTradeLineItem[3]//ram:AdditionalReferencedDocument/ram:IssuerAssignedID');
+
+        self::assertSame(['https://example.com/passport/tshirt-m'], $line1Refs, 'First line (T-shirt) should have the passport URL');
+        self::assertSame(['https://example.com/passport/book'], $line2Refs, 'Second line (Book) should have the passport URL');
+        self::assertSame([], $line3Refs, 'Third line (UPS shipping, no variant code) should have no passport URL');
+
+        $typeCodes = self::xmlValues($xml, '//ram:IncludedSupplyChainTradeLineItem//ram:AdditionalReferencedDocument/ram:TypeCode');
+        self::assertSame(['916', '916'], $typeCodes, 'TypeCode should be 916 (UNTDID 1153)');
+
+        self::assertValidAgainstXsd($xml);
+        self::assertEn16931BusinessRules($xml);
+    }
+
+    public function testItDoesNotWriteAdditionalReferencedDocumentWhenPassportUrlIsNull(): void
+    {
+        $invoice = self::multiRateInvoice();
+        $mapper = new FacturXInvoiceMapper(
+            paymentTermsProvider: null,
+            dppLinkEnabled: true,
+            passportUrlResolver: new class() implements \Tmonier\SyliusFacturXPlugin\Mapper\PassportUrlResolverInterface {
+                public function resolve(string $productCode): ?string
+                {
+                    return null; // No passport for this product
+                }
+            },
+        );
+
+        $xml = (new CiiXmlWriter())->write($mapper->map($invoice, self::settings()));
+
+        $refs = self::xmlValues($xml, '//ram:IncludedSupplyChainTradeLineItem//ram:AdditionalReferencedDocument');
+        self::assertSame([], $refs, 'No AdditionalReferencedDocument should be written when URL is null');
+
+        self::assertValidAgainstXsd($xml);
+        self::assertEn16931BusinessRules($xml);
+    }
+
     private function write(InvoiceInterface $invoice, ?ChannelSettings $settings = null, ?CustomerIdentifiers $identifiers = null): string
     {
         return (new CiiXmlWriter())->write((new FacturXInvoiceMapper())->map($invoice, $settings ?? self::settings(), $identifiers));
