@@ -29,6 +29,13 @@ final class FrenchIdentifiersTest extends TestCase
         self::assertFalse(FrenchIdentifiers::isValidSiret('5520813170001'));
     }
 
+    public function testSiretOfLaPosteEstablishments(): void
+    {
+        self::assertTrue(FrenchIdentifiers::isValidSiret('35600000000048'), 'La Poste head office: Luhn key valid, sum of the digits not a multiple of 5');
+        self::assertTrue(FrenchIdentifiers::isValidSiret('35600000000042'), 'La Poste: sum of the digits multiple of 5, Luhn key invalid');
+        self::assertFalse(FrenchIdentifiers::isValidSiret('35600000000041'), 'La Poste: neither Luhn key nor sum rule');
+    }
+
     public function testVatNumber(): void
     {
         self::assertTrue(FrenchIdentifiers::isValidVatNumber('FR03552081317'));
