@@ -10,7 +10,7 @@ namespace Tmonier\SyliusFacturXPlugin\Validator;
  */
 final class FrenchIdentifiers
 {
-    /** SIRET of La Poste establishments do not follow the Luhn algorithm. */
+    /** SIRET of La Poste establishments do not all follow the Luhn algorithm. */
     private const LA_POSTE_SIREN = '356000000';
 
     public static function isValidSiren(string $siren): bool
@@ -25,7 +25,8 @@ final class FrenchIdentifiers
         }
 
         if (str_starts_with($siret, self::LA_POSTE_SIREN)) {
-            return 0 === array_sum(str_split($siret)) % 5;
+            // La Poste establishments are numbered with the digit sum rule (multiple of 5), the head office follows Luhn.
+            return self::luhn($siret) || 0 === array_sum(str_split($siret)) % 5;
         }
 
         return self::isValidSiren(substr($siret, 0, 9)) && self::luhn($siret);
