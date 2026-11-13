@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Fixed
+
+- `FrenchIdentifiers::isValidSiret()` accepted a SIRET of La Poste (SIREN `356000000`) only when
+  the sum of its digits is a multiple of 5. The head office SIRET, `35600000000048`, follows the
+  Luhn key instead and was refused. A SIRET of La Poste is now valid when it passes either rule.
+
+## 1.2.0 (2026-11-01)
+
+### Added
+
+- BT-128 links to digital product passports in the invoice lines: `PassportUrlResolverInterface`
+  port, `InvoiceLine::documentReference`, `AdditionalReferencedDocument` (TypeCode 916) in the
+  CII XML, enabled by the `dpp_link_in_invoice` option (default `false`).
+
 ### Security
 
 - `downloadXmlAction` now checks `InvoiceVoter::ACCESS` (from `sylius/invoicing-plugin`) before
